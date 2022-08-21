@@ -1,0 +1,24 @@
+---
+
+- name: systemd daemon reload
+  become: true
+  systemd:
+    daemon_reload: true
+    force: true
+
+- name: start service
+  service:
+    name: influxdb
+    state: started
+
+- name: restart service
+  service:
+    name: influxdb
+    state: restarted
+
+- name: reload service
+  service:
+    name: influxdb
+    state: reloaded
+
+...

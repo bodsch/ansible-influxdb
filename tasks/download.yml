@@ -1,0 +1,111 @@
+---
+
+# - block:
+#     - name: get checksum list
+#       set_fact:
+#         __influxdb_checksums: "{{ lookup('url', 'https://github.com/grafana/influxdb/releases/download/v' + influxdb_version + '/SHA256SUMS', wantlist=True) | list }}"
+#       run_once: true
+#
+#     - name: get checksum for {{ go_arch }} architecture
+#       set_fact:
+#         __influxdb_checksum: "{{ __influxdb_checksums | influxdb_checksum(item, 'linux', go_arch) }}"
+#   delegate_to: localhost
+
+- name: download influxdb archiv from {{ influxdb_release_download_url }}
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  get_url:
+    url: "{{ influxdb_release_download_url }}/{{ __influxdb_archive.influxdb }}"
+    dest: "{{ influxdb_local_tmp_directory }}/"
+    # checksum: "sha256:{{ __influxdb_checksum }}"
+  register: _download_archive
+  until: _download_archive is succeeded
+  retries: 10
+  delay: 5
+  check_mode: false
+
+- name: download influx-client archiv from {{ influxdb_release_download_url }}
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  get_url:
+    url: "{{ influxdb_release_download_url }}/{{ __influxdb_archive.influx_client }}"
+    dest: "{{ influxdb_local_tmp_directory }}/"
+    # checksum: "sha256:{{ __influxdb_checksum }}"
+  register: _download_archive
+  until: _download_archive is succeeded
+  retries: 10
+  delay: 5
+  check_mode: false
+
+- name: extract influxdb archiv
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  unarchive:
+    src: "{{ influxdb_local_tmp_directory }}/{{ __influxdb_archive.influxdb }}"
+    dest: "{{ influxdb_local_tmp_directory }}/"
+    copy: false
+
+- name: extract influx-client archiv
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  unarchive:
+    src: "{{ influxdb_local_tmp_directory }}/{{ __influxdb_archive.influx_client }}"
+    dest: "{{ influxdb_local_tmp_directory }}/"
+    copy: false
+
+- name: detect binary file for influxdb
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  stat:
+    path: "{{ __influxdb_binary.influxd }}"
+  register: stat_influxdb_binary
+
+- name: detect binary file for influx-client
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  stat:
+    path: "{{ __influxdb_binary.influx }}"
+  register: stat_client_binary
+
+- name: influxdb
+  block:
+    - name: propagate influxd binary
+      copy:
+        src: "{{ __influxdb_binary.influxd }}"
+        dest: "{{ influxdb_install_path }}/influxd"
+        mode: 0755
+        owner: "{{ influxdb_system_user }}"
+        group: "{{ influxdb_system_group }}"
+        remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
+
+    - name: make sure influxd is executable
+      file:
+        path: "{{ influxdb_install_path }}/influxd"
+        mode: 0755
+        owner: "{{ influxdb_system_user }}"
+        group: "{{ influxdb_system_group }}"
+  when:
+    - stat_influxdb_binary.stat.exists
+
+- name: influx-client
+  block:
+    - name: propagate influx binary
+      copy:
+        src: "{{ __influxdb_binary.influx }}"
+        dest: "{{ influxdb_install_path }}/influx"
+        mode: 0755
+        owner: "{{ influxdb_system_user }}"
+        group: "{{ influxdb_system_group }}"
+        remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
+
+    - name: make sure influx is executable
+      file:
+        path: "{{ influxdb_install_path }}/influx"
+        mode: 0755
+        owner: "{{ influxdb_system_user }}"
+        group: "{{ influxdb_system_group }}"
+  when:
+    - stat_client_binary.stat.exists
+
+...
+

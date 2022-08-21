@@ -1,0 +1,42 @@
+---
+
+influxdb_version: "2.4.0"
+
+influxdb_release_download_url: https://dl.influxdata.com/influxdb/releases
+
+influxdb_system_user: influxdb
+influxdb_system_group: influxdb
+influxdb_config_dir: /etc/influxdb
+influxdb_storage_dir: /var/lib/influxdb
+
+influxdb_direct_download: false
+
+influxdb_service: {}
+
+# influxdb_config_global: {}
+#
+# influxdb_config_graphite: {}
+#
+# influxdb_config_collectd: {}
+#
+# influxdb_config_udp: {}
+#
+# influxdb_config_meta: {}
+#
+# influxdb_config_http: {}
+#
+# influxdb_config_data: {}
+
+influxdb_admin: {}
+#  username: admin
+#  password: admin
+
+influxdb_primary: {}
+
+influxdb_orgs: []
+
+influxdb_users: []
+
+influxdb_buckets: []
+
+...

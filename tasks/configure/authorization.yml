@@ -1,0 +1,38 @@
+---
+
+- name: ensure, that influxdb are running
+  service:
+    name: influxdb
+    state: started
+
+- name: wait for started influxdb
+  wait_for:
+    host: "{{ influxdb_config_global['bind-address'].split(':')[0] }}"
+    port: "{{ influxdb_config_global['bind-address'].split(':')[1] }}"
+    delay: 5
+    sleep: 1
+    state: started
+
+- name: check if user exists
+  command: |
+    /usr/bin/influxd \
+      -execute 'SHOW USERS' \
+      -username '{{ influxdb_admin.username }}' \
+      -password '{{ influxdb_admin.password }}' \
+      -format csv
+  register: _influxdb_check_user
+  failed_when: false
+  changed_when: false
+
+- name: d
+  debug:
+    msg: "{{ _influxdb_check_user }}"
+
+- name: create admin user
+  command: |
+    /usr/bin/influxd \
+      -execute "CREATE USER {{ influxdb_admin.username }} WITH PASSWORD '{{ influxdb_admin.password }}' WITH ALL PRIVILEGES"
+  when:
+    - '"create admin user first or disable authentication" in _influxdb_check_user.stdout'
+
+...

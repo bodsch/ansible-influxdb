@@ -1,0 +1,13 @@
+---
+
+- name: restart influxdb if needed
+  meta: flush_handlers
+
+- name: ensure influxdb is enabled on boot
+  become: true
+  service:
+    name: influxdb
+    enabled: true
+    state: started
+
+...
