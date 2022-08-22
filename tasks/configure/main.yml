@@ -1,14 +1,14 @@
 ---
 
-# - name: create influxdb configuration
-#   template:
-#     src: "influxdb.conf.j2"
-#     dest: "{{ influxdb_config_dir }}/influxdb.conf"
-#     owner: "root"
-#     group: "root"
-#     mode: "0644"
-#   notify:
-#     - restart service
+- name: create influxdb configuration
+  template:
+    src: etc/influxdb/config.yml.j2
+    dest: "{{ influxdb_config_dir }}/config.yml"
+    owner: root
+    group: "{{ influxdb_system_group }}"
+    mode: 0644
+  notify:
+    - restart service
 
 - name: ensure influxdb is started
   become: true

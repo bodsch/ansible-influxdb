@@ -16,6 +16,14 @@
     state: link
     force: true
 
+- name: create influxdb config directory
+  file:
+    path: "{{ influxdb_config_dir }}"
+    state: directory
+    owner: "{{ influxdb_system_user }}"
+    group: root
+    mode: 0755
+
 - name: create influxdb data directory
   file:
     path: "{{ item }}"

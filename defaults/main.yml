@@ -13,6 +13,10 @@ influxdb_direct_download: false
 
 influxdb_service: {}
 
+influxdb_config:
+  http-bind-address: 127.0.0.1:8086
+  reporting-disabled: true
+
 influxdb_primary:
   organization: example-org
   bucket: example-bucket

@@ -3,7 +3,7 @@
 influxdb_defaults_service:
   # supported log levels are debug, info, and error (default info)
   log:
-    level: debug
+    level: info
   # add an instance id for replications to prevent collisions and allow querying by edge node
   instance_id: "{{ ansible_hostname }}"
   # Don't expose metrics over HTTP at /metrics

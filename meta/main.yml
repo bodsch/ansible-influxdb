@@ -2,28 +2,24 @@
 
 galaxy_info:
   role_name: influxdb
-  author: bodsch
+  namespace: bodsch
 
-  description: Install and configures InfluDB
+  author: Bodo Schulz
+  description: Install and configures InfluxDB2
 
   license: Apache-2.0
   min_ansible_version: 2.10
 
   platforms:
+    - name: ArchLinux
     - name: Debian
       versions:
         - buster
         - bullseye
   galaxy_tags:
-    - rhel
-    - debian
-    - ubuntu
-    - centos
     - influxdb
-    - performance
     - metrics
     - collector
-    - icinga2
     - monitoring
 
 dependencies: []

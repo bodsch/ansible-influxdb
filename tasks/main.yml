@@ -15,7 +15,7 @@
 - name: configure
   include_tasks: configure/main.yml
 
-#- name: service
-#  include_tasks: service.yml
+- name: service
+  include_tasks: service.yml
 
 ...
