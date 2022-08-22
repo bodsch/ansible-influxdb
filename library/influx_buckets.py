@@ -57,20 +57,62 @@ class InfluxBucket(object):
             msg="Influxdb buckets ..."
         )
 
-        self.module.log(msg=" - list existing buckets")
+        # rc, out, err = self.bucket_list()
+        #
+        # _out = json.loads(out)
+        #
+        # global_buckets = list(
+        #     map(lambda d: d.get('name', 'default value'), _out)
+        # )
+        # self.module.log(msg=f" - existion global buckets: {', '.join(global_buckets)}")
 
-        rc, out, err = self.bucket_list()
+        for bucketname, v in self.buckets.items():
+            """
+            """
+            _state = v.get("state", "create")
+            _organization = v.get("organization", {}).get("name", None)
+            buckets = []
 
-        _out = json.loads(out)
+            self.module.log(msg=f"   bucket: '{bucketname}'")
+            self.module.log(msg=f"     values: '{v}'")
 
-        buckets = list(
-            map(lambda d: d.get('name', 'default value'), _out)
-        )
-        self.module.log(msg=f" - existion buckets: {', '.join(buckets)}")
+            rc, out, err = self.bucket_list(bucketname, v)
 
+            if rc == 0:
+                _out = json.loads(out)
 
+                buckets = list(
+                    map(lambda d: d.get('name', 'default value'), _out)
+                )
+                self.module.log(msg=f" - existion buckets for org {_organization}: {', '.join(buckets)}")
 
+            if _state == "create":
+                """
+                  create new bucket
+                """
+                if bucketname in buckets:
+                    res = {}
+                    res[bucketname] = dict(
+                        state=f"bucket: '{bucketname}' already for organization {_organization} created."
+                    )
+                    result_state.append(res)
+                    continue
 
+                rc, out, err = self.bucket_create(bucketname, v)
+
+                if rc == 0:
+                    res = {}
+                    res[bucketname] = dict(
+                        state=f"bucket: '{bucketname}' successfuly for organization {_organization} created."
+                    )
+                    result_state.append(res)
+                else:
+                    res = {}
+                    res[bucketname] = dict(
+                        state=err,
+                        failed=True
+                    )
+                    result_state.append(res)
 
         # define changed for the running tasks
         # migrate a list of dict into dict
@@ -89,8 +131,7 @@ class InfluxBucket(object):
 
         return result
 
-
-    def bucket_list(self, bucket_name=None):
+    def bucket_list(self, bucket_name=None, values={}):
         """
             # influx bucket list --help
             NAME:
@@ -118,26 +159,99 @@ class InfluxBucket(object):
                --offset value          Number of buckets to skip over in the list (default: 0)
                --page-size value       Number of buckets to fetch per request to the server (default: 20)
         """
+        if values and len(values) > 0:
+            organisation = values.get("organization", {}).get("name")
+        else:
+            organisation = None
+
         args = []
         args.append(self._influx)
         args.append("bucket")
         args.append("list")
 
+        if organisation:
+            args.append("--org")
+            args.append(organisation)
+
         if bucket_name:
             args.append("--name")
             args.append(bucket_name)
 
-        args += self._default_args()
+        args += self._common_options()
+
+        rc, out, err = self._exec(args, False)
+
+        if rc != 0:
+            self.module.log(msg=f"args: {args}")
+
+        return rc, out, err
+
+    def bucket_create(self, bucket_name, values):
+        """
+            # influx bucket create --help
+            NAME:
+               influx bucket create - Create bucket
+
+            USAGE:
+               influx bucket create [command options] [arguments...]
+
+            COMMON OPTIONS:
+               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+               --http-debug
+               --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
+               --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
+               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+
+            OPTIONS:
+               --org-id value                 The ID of the organization [$INFLUX_ORG_ID]
+               --org value, -o value          The name of the organization [$INFLUX_ORG]
+               --name value, -n value         New bucket name [$INFLUX_BUCKET_NAME]
+               --description value, -d value  Description of the bucket that will be created
+               --retention value, -r value    Duration bucket will retain data, or 0 for infinite
+               --shard-group-duration value   Shard group duration used internally by the storage engine
+               --schema-type value            The schema type (implicit, explicit) (default: implicit)
+        """
+        organisation = values.get("organization", {}).get("name")
+        description = values.get("description")
+        retention = values.get("retention")
+        schema_type = values.get("schema_type")
+        shard_group_duration = values.get("shard_group_duration")
+
+        args = []
+        args.append(self._influx)
+        args.append("bucket")
+        args.append("create")
+        args.append("--name")
+        args.append(bucket_name)
+        args.append("--org")
+        args.append(organisation)
+
+        if description:
+            args.append("--description")
+            args.append(description)
+
+        if retention:
+            args.append("--retention")
+            args.append(retention)
+
+        if shard_group_duration:
+            args.append("--shard-group-duration")
+            args.append(shard_group_duration)
+
+        if schema_type:
+            args.append("--schema-type")
+            args.append(schema_type)
+
+        args += self._common_options()
 
         self.module.log(msg=f"  args: '{args}'")
 
         rc, out, err = self._exec(args, False)
 
         return rc, out, err
-
-    def bucket_create(self):
-        """
-        """
 
     def _bucket_delete(self):
         """
@@ -151,7 +265,7 @@ class InfluxBucket(object):
         """
         """
 
-    def _default_args(self):
+    def _common_options(self):
         """
         """
         args = []
@@ -188,7 +302,7 @@ class InfluxBucket(object):
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
 
         # self.module.log(msg=f"  rc : '{rc}'")
-        self.module.log(msg=f"  out: '{out}'")
+        # self.module.log(msg=f"  out: '{out}'")
         # self.module.log(msg=f"  err: '{err}'")
 
         return rc, out, err

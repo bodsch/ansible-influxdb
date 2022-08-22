@@ -13,30 +13,17 @@ influxdb_direct_download: false
 
 influxdb_service: {}
 
-# influxdb_config_global: {}
-#
-# influxdb_config_graphite: {}
-#
-# influxdb_config_collectd: {}
-#
-# influxdb_config_udp: {}
-#
-# influxdb_config_meta: {}
-#
-# influxdb_config_http: {}
-#
-# influxdb_config_data: {}
+influxdb_primary:
+  organization: example-org
+  bucket: example-bucket
+  username: example-user
+  password: LA9NMTb6WZ285zPGPgyUJEucuJUjr6W7
+  token: example-token
 
-influxdb_admin: {}
-#  username: admin
-#  password: admin
+influxdb_organizations: {}
 
-influxdb_primary: {}
+influxdb_users: {}
 
-influxdb_orgs: []
-
-influxdb_users: []
-
-influxdb_buckets: []
+influxdb_buckets: {}
 
 ...

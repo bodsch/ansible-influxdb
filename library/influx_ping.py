@@ -49,25 +49,8 @@ class InfluxPing(object):
         args = []
         args.append(self._influx)
         args.append("ping")
-        args.append("--host")
-        args.append(self.host)
 
-        if self.skip_verify:
-            args.append("--skip-verify")
-
-        if self.http_debug:
-            args.append("--http-debug")
-
-        if self.configs_path:
-            args.append("--configs-path")
-            args.append(self.configs_path)
-
-        if len(self.active_config) > 0:
-            for a in self.active_config:
-                args.append("--active-config")
-                args.append(a)
-
-        self.module.log(msg=f"  args: '{args}'")
+        args += self._common_options()
 
         rc, out, err = self._exec(args, False)
 
@@ -90,15 +73,39 @@ class InfluxPing(object):
                 stderr=err
             )
 
+    def _common_options(self):
+        """
+        """
+        args = []
+        args.append("--host")
+        args.append(self.host)
+
+        if self.skip_verify:
+            args.append("--skip-verify")
+
+        if self.http_debug:
+            args.append("--http-debug")
+
+        if self.configs_path:
+            args.append("--configs-path")
+            args.append(self.configs_path)
+
+        if len(self.active_config) > 0:
+            for a in self.active_config:
+                args.append("--active-config")
+                args.append(a)
+
+        return args
+
     def _exec(self, commands, check_rc=True):
         """
           execute shell program
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
 
-        # self.module.log(msg=f"  rc : '{rc}'")
-        # self.module.log(msg=f"  out: '{out}'")
-        # self.module.log(msg=f"  err: '{err}'")
+        self.module.log(msg=f"  rc : '{rc}'")
+        self.module.log(msg=f"  out: '{out}'")
+        self.module.log(msg=f"  err: '{err}'")
 
         return rc, out, err
 

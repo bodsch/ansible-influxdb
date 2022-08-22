@@ -76,29 +76,11 @@ class InfluxSetup(object):
         args = []
         args.append(self._influx)
         args.append("setup")
-        args.append("--host")
-        args.append(self.host)
-        args.append("--json")
-        args.append("--hide-headers")
+
         args.append("--username")
         args.append(self.username)
         args.append("--password")
         args.append(self.password)
-
-        if self.skip_verify:
-            args.append("--skip-verify")
-
-        if self.http_debug:
-            args.append("--http-debug")
-
-        if self.configs_path:
-            args.append("--configs-path")
-            args.append(self.configs_path)
-
-        if len(self.active_config) > 0:
-            for a in self.active_config:
-                args.append("--active-config")
-                args.append(a)
 
         if self.token:
             args.append("--token")
@@ -123,6 +105,8 @@ class InfluxSetup(object):
             args.append("--name")
             args.append(self.name)
 
+        args += self._common_options()
+
         self.module.log(msg=f"  args: '{args}'")
 
         rc, out, err = self._exec(args, False)
@@ -140,6 +124,7 @@ class InfluxSetup(object):
             failed = True
 
             if "has already been set up" in err:
+                rc = 0
                 failed = False
 
             return dict(
@@ -153,15 +138,45 @@ class InfluxSetup(object):
 
         return result
 
+    def _common_options(self):
+        """
+        """
+        args = []
+        args.append("--host")
+        args.append(self.host)
+        args.append("--json")
+        args.append("--hide-headers")
+
+        if self.token:
+            args.append("--token")
+            args.append(self.token)
+
+        if self.skip_verify:
+            args.append("--skip-verify")
+
+        if self.http_debug:
+            args.append("--http-debug")
+
+        if self.configs_path:
+            args.append("--configs-path")
+            args.append(self.configs_path)
+
+        if len(self.active_config) > 0:
+            for a in self.active_config:
+                args.append("--active-config")
+                args.append(a)
+
+        return args
+
     def _exec(self, commands, check_rc=True):
         """
           execute shell program
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
 
-        self.module.log(msg=f"  rc : '{rc}'")
-        self.module.log(msg=f"  out: '{out}'")
-        self.module.log(msg=f"  err: '{err}'")
+        # self.module.log(msg=f"  rc : '{rc}'")
+        # self.module.log(msg=f"  out: '{out}'")
+        # self.module.log(msg=f"  err: '{err}'")
 
         return rc, out, err
 

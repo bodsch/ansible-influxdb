@@ -58,8 +58,6 @@ class InfluxUser(object):
             msg="Influxdb users ..."
         )
 
-        self.module.log(msg=" - list existing users")
-
         rc, out, err = self.user_list()
 
         _out = json.loads(out)
@@ -69,25 +67,24 @@ class InfluxUser(object):
         )
         self.module.log(msg=f" - existion users: {', '.join(users)}")
 
-        """
-          create new user
-        """
-        self.module.log(msg=" - create new user")
         for username, v in self.users.items():
             """
             """
-            if v.get("state") == "create":
+            _state = v.get("state", "create")
+            # self.module.log(msg=f"   org: '{organization}'")
+            # self.module.log(msg=f"     values: '{v}'")
+
+            if _state == "create":
+                """
+                  create new user
+                """
                 if username in users:
-                    self.module.log(msg=f"   user: '{username}' already created.")
                     res = {}
                     res[username] = dict(
                         state=f"user: '{username}' already created."
                     )
                     result_state.append(res)
                     continue
-
-                self.module.log(msg=f"   user: '{username}'")
-                self.module.log(msg=f"     values: '{v}'")
 
                 rc, out, err = self.user_create(username, v)
 
@@ -134,9 +131,7 @@ class InfluxUser(object):
             args.append("--name")
             args.append(user_name)
 
-        args += self._default_args()
-
-        self.module.log(msg=f"  args: '{args}'")
+        args += self._common_options()
 
         rc, out, err = self._exec(args, False)
 
@@ -167,8 +162,6 @@ class InfluxUser(object):
                --name value, -n value      The user name [$INFLUX_NAME]
                --password value, -p value  The user password
         """
-        self.module.log(msg=f"create user {user_name}")
-
         organisation = values.get("organization", {}).get("name")
         password = values.get("password")
 
@@ -183,9 +176,7 @@ class InfluxUser(object):
         args.append("--password")
         args.append(password)
 
-        args += self._default_args()
-
-        self.module.log(msg=f"  args: '{args}'")
+        args += self._common_options()
 
         rc, out, err = self._exec(args, False)
 
@@ -206,7 +197,7 @@ class InfluxUser(object):
         """
         pass
 
-    def _default_args(self):
+    def _common_options(self):
         """
         """
         args = []

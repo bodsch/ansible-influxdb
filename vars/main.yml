@@ -129,17 +129,6 @@ influxdb_defaults_service:
     # vault authentication token
     vault_token: ""
 
-influxdb_defaults_admin:
-  username: admin
-  password: admin
-  token: "ADMIN-TOKEN"
-
-influxdb_defaults_primary:
-  org: "example-org"
-  bucket: "example-bucket"
-  username: "example-user"
-  password: "ExAmPl3PA55W0rD"
-
 # influxdb_defaults_config_global:
 #   reporting-disabled: true
 #   bind-address: 127.0.0.1:8086
@@ -258,7 +247,6 @@ __influxdb_archive:
 __influxdb_binary:
   influxd: "{{ influxdb_local_tmp_directory }}/influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}_linux_{{ go_arch }}/influxd"
   influx: "{{ influxdb_local_tmp_directory }}/influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}-client-{{ influxdb_version }}-linux-{{ go_arch }}/influx"
-
 
 # ------------------------------------------------------------------------
 

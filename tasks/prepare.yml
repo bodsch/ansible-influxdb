@@ -47,7 +47,8 @@
   when:
     - influxdb_requirements | default([]) | count > 0
 
-- block:
+- name: define latest version
+  block:
     - name: get latest release
       uri:
         url: "https://api.github.com/repos/influxdata/influxdb/releases/latest"
@@ -172,8 +173,10 @@
 - name: merge influxdb configuration between defaults and custom
   set_fact:
     influxdb_service: "{{ influxdb_defaults_service | combine( influxdb_service, recursive=True ) }}"
-    influxdb_admin: "{{ influxdb_defaults_admin | combine( influxdb_admin, recursive=True ) }}"
     influxdb_primary: "{{ influxdb_defaults_primary | combine( influxdb_primary, recursive=True ) }}"
+    influxdb_exists: "{{ stat_influxdb_binary.stat.exists }}"
+    influxdb_client_exists: "{{ stat_influx_client_binary.stat.exists }}"
+    # influxdb_admin: "{{ influxdb_defaults_admin | combine( influxdb_admin, recursive=True ) }}"
     # influxdb_config_global: "{{ influxdb_defaults_config_global | combine( influxdb_config_global, recursive=True ) }}"
     # influxdb_config_graphite: "{{ influxdb_defaults_config_graphite | combine( influxdb_config_graphite, recursive=True ) }}"
     # influxdb_config_collectd: "{{ influxdb_defaults_config_collectd | combine( influxdb_config_collectd, recursive=True ) }}"
@@ -181,9 +184,5 @@
     # influxdb_config_meta: "{{ influxdb_defaults_config_meta | combine( influxdb_config_meta, recursive=True ) }}"
     # influxdb_config_http: "{{ influxdb_defaults_config_http | combine( influxdb_config_http, recursive=True ) }}"
     # influxdb_config_data: "{{ influxdb_defaults_config_data | combine( influxdb_config_data, recursive=True ) }}"
-    influxdb_exists: "{{ stat_influxdb_binary.stat.exists }}"
-    influxdb_client_exists: "{{ stat_influx_client_binary.stat.exists }}"
-
-
 
 ...
