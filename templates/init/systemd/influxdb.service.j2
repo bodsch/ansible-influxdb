@@ -1,0 +1,30 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description       = InfluxDB is an open-source, distributed, time series database
+Documentation     = https://docs.influxdata.com/influxdb/
+After             = network-online.target
+
+[Service]
+Type              = simple
+Environment       = "GOMAXPROCS={{ ansible_processor_vcpus | default(ansible_processor_count) }}"
+EnvironmentFile  = {{ influxdb_defaults_directory }}/influxdb
+
+User              = {{ influxdb_system_user }}
+Group             = {{ influxdb_system_group }}
+
+WorkingDirectory  = {{ influxdb_storage_dir }}
+
+ExecReload        = /bin/kill -HUP $MAINPID
+
+# ExecStartPre      = /usr/bin/influxdb -config.file {{ influxdb_config_dir }}/influxdb.yml -verify-config -log.level debug
+ExecStartPre      = /bin/chown --recursive {{ influxdb_system_user }}:{{ influxdb_system_group }} {{ influxdb_storage_dir }}
+ExecStart         = /usr/bin/influxd $OPTIONS
+
+LimitNOFILE       = 65000
+SyslogIdentifier  = influxdb
+Restart           = always
+
+[Install]
+Alias             = influxd.service
+WantedBy          = multi-user.target
