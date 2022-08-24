@@ -38,6 +38,7 @@ def read_ansible_yaml(file_name, role_name):
 
     return f"file={read_file} name={role_name}"
 
+
 @pytest.fixture()
 def get_vars(host):
     """
@@ -53,10 +54,10 @@ def get_vars(host):
     elif distribution in ['arch', 'artix']:
         operation_system = f"{distribution}linux"
 
-    file_defaults      = read_ansible_yaml(f"{base_dir}/defaults/main", "role_defaults")
-    file_vars          = read_ansible_yaml(f"{base_dir}/vars/main", "role_vars")
-    file_distibution   = read_ansible_yaml(f"{base_dir}/vars/{operation_system}", "role_distibution")
-    file_molecule      = read_ansible_yaml(f"{molecule_dir}/group_vars/all/vars", "test_vars")
+    file_defaults = read_ansible_yaml(f"{base_dir}/defaults/main", "role_defaults")
+    file_vars = read_ansible_yaml(f"{base_dir}/vars/main", "role_vars")
+    file_distibution = read_ansible_yaml(f"{base_dir}/vars/{operation_system}", "role_distibution")
+    file_molecule = read_ansible_yaml(f"{molecule_dir}/group_vars/all/vars", "test_vars")
     # file_host_molecule = read_ansible_yaml(f"{base_dir}/host_vars/{HOST}/vars", "host_vars")
 
     defaults_vars = host.ansible("include_vars", file_defaults).get("ansible_facts").get("role_defaults")
@@ -75,6 +76,13 @@ def get_vars(host):
     return result
 
 
+def local_facts(host):
+    """
+      return local facts
+    """
+    return host.ansible("setup").get("ansible_facts").get("ansible_local").get("influxdb")
+
+
 @pytest.mark.parametrize("directories", [
     "/etc/influxdb",
     "/var/lib/influxdb",
@@ -88,13 +96,41 @@ def test_directories(host, directories):
     assert d.is_directory
 
 
-@pytest.mark.parametrize("files", [
-    "/etc/influxdb/config.yml",
-    "/etc/default/influxdb"
-])
-def test_files(host, files):
-    f = host.file(files)
-    assert f.is_file
+def test_files(host, get_vars):
+    """
+    """
+    distribution = host.system_info.distribution
+    release = host.system_info.release
+
+    print(f"distribution: {distribution}")
+    print(f"release     : {release}")
+
+    version = local_facts(host).get("version")
+
+    install_dir = get_vars.get("influxdb_install_path")
+    defaults_dir = get_vars.get("influxdb_defaults_directory")
+    config_dir = get_vars.get("influxdb_config_dir")
+
+    if 'latest' in install_dir:
+        install_dir = install_dir.replace('latest', version)
+
+    files = []
+    files.append("/usr/bin/influxd")
+    files.append("/usr/bin/influx")
+
+    if install_dir:
+        files.append(f"{install_dir}/influxd")
+        files.append(f"{install_dir}/influx")
+    if defaults_dir and not distribution == "artix":
+        files.append(f"{defaults_dir}/influxdb")
+    if config_dir:
+        files.append(f"{config_dir}/config.yml")
+
+    print(files)
+
+    for _file in files:
+        f = host.file(_file)
+        assert f.is_file
 
 
 def test_service_running_and_enabled(host):

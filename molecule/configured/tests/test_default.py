@@ -38,6 +38,7 @@ def read_ansible_yaml(file_name, role_name):
 
     return f"file={read_file} name={role_name}"
 
+
 @pytest.fixture()
 def get_vars(host):
     """
@@ -53,10 +54,10 @@ def get_vars(host):
     elif distribution in ['arch', 'artix']:
         operation_system = f"{distribution}linux"
 
-    file_defaults      = read_ansible_yaml(f"{base_dir}/defaults/main", "role_defaults")
-    file_vars          = read_ansible_yaml(f"{base_dir}/vars/main", "role_vars")
-    file_distibution   = read_ansible_yaml(f"{base_dir}/vars/{operation_system}", "role_distibution")
-    file_molecule      = read_ansible_yaml(f"{molecule_dir}/group_vars/all/vars", "test_vars")
+    file_defaults = read_ansible_yaml(f"{base_dir}/defaults/main", "role_defaults")
+    file_vars = read_ansible_yaml(f"{base_dir}/vars/main", "role_vars")
+    file_distibution = read_ansible_yaml(f"{base_dir}/vars/{operation_system}", "role_distibution")
+    file_molecule = read_ansible_yaml(f"{molecule_dir}/group_vars/all/vars", "test_vars")
     # file_host_molecule = read_ansible_yaml(f"{base_dir}/host_vars/{HOST}/vars", "host_vars")
 
     defaults_vars = host.ansible("include_vars", file_defaults).get("ansible_facts").get("role_defaults")
