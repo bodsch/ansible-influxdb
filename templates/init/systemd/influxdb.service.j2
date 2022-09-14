@@ -8,6 +8,8 @@ After             = network-online.target
 [Service]
 Type              = simple
 Environment       = "GOMAXPROCS={{ ansible_processor_vcpus | default(ansible_processor_count) }}"
+Environment       = MAX_OPEN_FILES=10000
+Environment       = RESTART_ON_UPGRADE=true
 EnvironmentFile  = {{ influxdb_defaults_directory }}/influxdb
 
 User              = {{ influxdb_system_user }}

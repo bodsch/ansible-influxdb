@@ -14,6 +14,7 @@
 - name: download influxdb archiv from {{ influxdb_release_download_url }}
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
   get_url:
     url: "{{ influxdb_release_download_url }}/{{ __influxdb_archive.influxdb }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
@@ -27,6 +28,7 @@
 - name: download influx-client archiv from {{ influxdb_release_download_url }}
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
   get_url:
     url: "{{ influxdb_release_download_url }}/{{ __influxdb_archive.influx_client }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
@@ -40,6 +42,7 @@
 - name: extract influxdb archiv
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
   unarchive:
     src: "{{ influxdb_local_tmp_directory }}/{{ __influxdb_archive.influxdb }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
@@ -48,6 +51,7 @@
 - name: extract influx-client archiv
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
   unarchive:
     src: "{{ influxdb_local_tmp_directory }}/{{ __influxdb_archive.influx_client }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
@@ -56,6 +60,7 @@
 - name: detect binary file for influxdb
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
   stat:
     path: "{{ __influxdb_binary.influxd }}"
   register: stat_influxdb_binary
@@ -63,6 +68,7 @@
 - name: detect binary file for influx-client
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
   stat:
     path: "{{ __influxdb_binary.influx }}"
   register: stat_client_binary
