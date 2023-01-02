@@ -1,7 +1,7 @@
 ---
 
 - name: include OS specific configuration ({{ ansible_distribution }} ({{ ansible_os_family }}) {{ ansible_distribution_major_version }})
-  include_vars: "{{ lookup('first_found', params) }}"
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
     params:
       paths:
@@ -21,7 +21,7 @@
       skip: true
 
 - name: assert wrong influxdb version
-  assert:
+  ansible.builtin.assert:
     that:
       - influxdb_main_version | int == 2
     msg:
@@ -30,11 +30,11 @@
     quiet: true
 
 - name: update package cache
-  package:
+  ansible.builtin.package:
     update_cache: true
 
 - name: define delegate instance for download handling
-  set_fact:
+  ansible.builtin.set_fact:
     influxdb_delegate_to: "{{ ansible_host }}"
     influxdb_local_tmp_directory: "{{
         lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
@@ -43,16 +43,21 @@
     - influxdb_direct_download
 
 - name: install dependency
-  package:
+  ansible.builtin.package:
     name: "{{ influxdb_requirements }}"
     state: present
   when:
     - influxdb_requirements | default([]) | count > 0
 
 - name: define latest version
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when:
+    - influxdb_version == "latest"
   block:
     - name: get latest release
-      uri:
+      ansible.builtin.uri:
         url: "https://api.github.com/repos/influxdata/influxdb/releases/latest"
         method: GET
         return_content: true
@@ -67,25 +72,25 @@
       retries: 5
 
     - name: set influxdb version to {{ _latest_release.json.tag_name[1:] }}
-      set_fact:
+      ansible.builtin.set_fact:
         influxdb_version: "{{ _latest_release.json.tag_name[1:] }}"
-  delegate_to: localhost
-  become: false
-  run_once: true
-  when:
-    - influxdb_version == "latest"
 
 - name: detect our installation path '{{ influxdb_install_path | dirname }}'
-  stat:
+  ansible.builtin.stat:
     path: "{{ influxdb_install_path | dirname }}"
     get_checksum: false
   register: stat_influxdb_path
   ignore_errors: true
 
 - name: old installation
+  when:
+    - stat_influxdb_path is defined
+    - stat_influxdb_path.stat is defined
+    - stat_influxdb_path.stat.isdir is defined
+    - not stat_influxdb_path.stat.isdir
   block:
     - name: stop old service
-      service:
+      ansible.builtin.service:
         name: influxdb
         state: stopped
         enabled: false
@@ -93,53 +98,50 @@
         - systemd daemon reload
 
     - name: remove installed systemd unit
-      file:
+      ansible.builtin.file:
         state: absent
         path: /etc/systemd/system/influxdb.service
       when:
         - ansible_service_mgr | lower == "systemd"
 
     - name: remove installed influxdb
-      file:
+      ansible.builtin.file:
         state: absent
         path: "{{ stat_influxdb_path.stat.path }}"
-  when:
-    - stat_influxdb_path is defined
-    - stat_influxdb_path.stat is defined
-    - stat_influxdb_path.stat.isdir is defined
-    - not stat_influxdb_path.stat.isdir
 
 - name: flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: detect installed influxdb binary
-  stat:
+  ansible.builtin.stat:
     path: "{{ influxdb_install_path }}/influxd"
   register: stat_influxdb_binary
 
 - name: detect installed influx client binary
-  stat:
+  ansible.builtin.stat:
     path: "{{ influxdb_install_path }}/influx"
   register: stat_influx_client_binary
 
 - name: create download directory
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
-  file:
+  ansible.builtin.file:
     path: "{{ influxdb_local_tmp_directory }}"
     state: directory
     mode: 0750
 
 - name: user and group handling
+  when:
+    - influxdb_system_user != "root"
   block:
     - name: create influxdb group
-      group:
+      ansible.builtin.group:
         name: "{{ influxdb_system_group }}"
         state: present
         system: true
 
     - name: create influxdb user
-      user:
+      ansible.builtin.user:
         name: "{{ influxdb_system_user }}"
         groups: "{{ influxdb_system_group }}"
         append: true
@@ -147,11 +149,9 @@
         system: true
         createhome: false
         home: "{{ influxdb_storage_dir }}"
-  when:
-    - influxdb_system_user != "root"
 
 - name: create install directory
-  file:
+  ansible.builtin.file:
     path: "{{ influxdb_install_path }}"
     state: directory
     owner: "{{ influxdb_system_user }}"
@@ -159,7 +159,7 @@
     mode: 0755
 
 - name: fix directory rights for {{ influxdb_install_path | dirname }}
-  file:
+  ansible.builtin.file:
     path: "{{ influxdb_install_path | dirname }}"
     state: directory
     owner: "{{ influxdb_system_user }}"
@@ -168,7 +168,7 @@
     recurse: true
 
 - name: create ansible local facts directory
-  file:
+  ansible.builtin.file:
     dest: /etc/ansible/facts.d
     state: directory
     owner: root
@@ -176,8 +176,8 @@
     mode: 0775
 
 - name: merge influxdb configuration between defaults and custom
-  set_fact:
-    influxdb_service: "{{ influxdb_defaults_service | combine( influxdb_service, recursive=True ) }}"
+  ansible.builtin.set_fact:
+    influxdb_service: "{{ influxdb_defaults_service | combine(influxdb_service, recursive=True) }}"
     influxdb_exists: "{{ stat_influxdb_binary.stat.exists }}"
     influxdb_client_exists: "{{ stat_influx_client_binary.stat.exists }}"
 

@@ -1,7 +1,7 @@
 ---
 
 - name: create link to influxd binary
-  file:
+  ansible.builtin.file:
     src: "{{ influxdb_install_path }}/influxd"
     dest: /usr/bin/influxd
     state: link
@@ -10,14 +10,14 @@
     - restart service
 
 - name: create link to influx binary
-  file:
+  ansible.builtin.file:
     src: "{{ influxdb_install_path }}/influx"
     dest: /usr/bin/influx
     state: link
     force: true
 
 - name: create influxdb config directory
-  file:
+  ansible.builtin.file:
     path: "{{ influxdb_config_dir }}"
     state: directory
     owner: "{{ influxdb_system_user }}"
@@ -25,7 +25,7 @@
     mode: 0755
 
 - name: create influxdb data directory
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ influxdb_system_user }}"
@@ -38,10 +38,11 @@
     - "{{ influxdb_storage_dir }}/wal"
 
 - name: systemd
+  when:
+    - ansible_service_mgr | lower == "systemd"
   block:
-
     - name: create systemd service unit
-      template:
+      ansible.builtin.template:
         src: "init/systemd/influxdb.service.j2"
         dest: "{{ systemd_lib_directory }}/influxdb.service"
         owner: root
@@ -52,7 +53,7 @@
         - restart service
 
     - name: create influxdb run configuration
-      template:
+      ansible.builtin.template:
         src: "default/influxdb.j2"
         dest: "{{ influxdb_defaults_directory }}/influxdb"
         force: true
@@ -62,13 +63,13 @@
       notify:
         # - validate config
         - reload service
-  when:
-    - ansible_service_mgr | lower == "systemd"
 
 - name: openrc
+  when:
+    - ansible_service_mgr | lower == "openrc"
   block:
     - name: create openrc service configuration
-      template:
+      ansible.builtin.template:
         src: "init/openrc/conf.d/influxdb.j2"
         dest: "/etc/conf.d/influxdb"
         owner: root
@@ -76,17 +77,15 @@
         mode: 0644
 
     - name: create openrc init configuration
-      template:
+      ansible.builtin.template:
         src: "init/openrc/init.d/influxdb.j2"
         dest: "/etc/init.d/influxdb"
         owner: root
         group: root
         mode: 0750
-  when:
-    - ansible_service_mgr | lower == "openrc"
 
 - name: create local facts
-  template:
+  ansible.builtin.template:
     src: ansible_facts.j2
     dest: /etc/ansible/facts.d/influxdb.fact
     mode: 0755

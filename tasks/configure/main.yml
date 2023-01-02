@@ -1,7 +1,7 @@
 ---
 
 - name: create influxdb configuration
-  template:
+  ansible.builtin.template:
     src: etc/influxdb/config.yml.j2
     dest: "{{ influxdb_config_dir }}/config.yml"
     owner: root
@@ -12,7 +12,7 @@
 
 - name: ensure influxdb is started
   become: true
-  service:
+  ansible.builtin.service:
     name: influxdb
     state: started
 
@@ -53,15 +53,5 @@
     host: "http://127.0.0.1:8086"
     buckets: "{{ influxdb_buckets }}"
   register: _buckets
-
-# - name: ensure admin keys exists for organization admin users
-#   influx_auth:
-#     host: "http://127.0.0.1:8086"
-#     authentications: "{{ influxdb_users }}"
-#   register: _auth
-#
-# - name: d
-#   debug:
-#     msg: "{{ _auth }}"
 
 ...

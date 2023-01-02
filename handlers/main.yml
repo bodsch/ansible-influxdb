@@ -2,22 +2,24 @@
 
 - name: systemd daemon reload
   become: true
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: true
     force: true
+  when:
+    - ansible_service_mgr | lower == "systemd"
 
 - name: start service
-  service:
+  ansible.builtin.service:
     name: influxdb
     state: started
 
 - name: restart service
-  service:
+  ansible.builtin.service:
     name: influxdb
     state: restarted
 
 - name: reload service
-  service:
+  ansible.builtin.service:
     name: influxdb
     state: reloaded
 

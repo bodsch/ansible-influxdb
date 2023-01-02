@@ -15,9 +15,10 @@
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ influxdb_release_download_url }}/{{ __influxdb_archive.influxdb }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
+    mode: 0640
     # checksum: "sha256:{{ __influxdb_checksum }}"
   register: _download_archive
   until: _download_archive is succeeded
@@ -29,9 +30,10 @@
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ influxdb_release_download_url }}/{{ __influxdb_archive.influx_client }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
+    mode: 0640
     # checksum: "sha256:{{ __influxdb_checksum }}"
   register: _download_archive
   until: _download_archive is succeeded
@@ -43,7 +45,7 @@
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ influxdb_local_tmp_directory }}/{{ __influxdb_archive.influxdb }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
     copy: false
@@ -52,7 +54,7 @@
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ influxdb_local_tmp_directory }}/{{ __influxdb_archive.influx_client }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
     copy: false
@@ -61,7 +63,7 @@
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  stat:
+  ansible.builtin.stat:
     path: "{{ __influxdb_binary.influxd }}"
   register: stat_influxdb_binary
 
@@ -69,14 +71,16 @@
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  stat:
+  ansible.builtin.stat:
     path: "{{ __influxdb_binary.influx }}"
   register: stat_client_binary
 
 - name: influxdb
+  when:
+    - stat_influxdb_binary.stat.exists
   block:
     - name: propagate influxd binary
-      copy:
+      ansible.builtin.copy:
         src: "{{ __influxdb_binary.influxd }}"
         dest: "{{ influxdb_install_path }}/influxd"
         mode: 0755
@@ -85,18 +89,18 @@
         remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
 
     - name: make sure influxd is executable
-      file:
+      ansible.builtin.file:
         path: "{{ influxdb_install_path }}/influxd"
         mode: 0755
         owner: "{{ influxdb_system_user }}"
         group: "{{ influxdb_system_group }}"
-  when:
-    - stat_influxdb_binary.stat.exists
 
 - name: influx-client
+  when:
+    - stat_client_binary.stat.exists
   block:
     - name: propagate influx binary
-      copy:
+      ansible.builtin.copy:
         src: "{{ __influxdb_binary.influx }}"
         dest: "{{ influxdb_install_path }}/influx"
         mode: 0755
@@ -105,12 +109,10 @@
         remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
 
     - name: make sure influx is executable
-      file:
+      ansible.builtin.file:
         path: "{{ influxdb_install_path }}/influx"
         mode: 0755
         owner: "{{ influxdb_system_user }}"
         group: "{{ influxdb_system_group }}"
-  when:
-    - stat_client_binary.stat.exists
 
 ...

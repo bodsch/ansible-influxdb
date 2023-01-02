@@ -36,7 +36,9 @@ influxdb_defaults_service:
     key: ""
     # Minimum accepted TLS version (default "1.2")
     min-version: ""
-    # Restrict accept ciphers to: ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, ECDHE_RSA_WITH_AES_128_GCM_SHA256, ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, ECDHE_RSA_WITH_AES_256_GCM_SHA384, ECDHE_ECDSA_WITH_CHACHA20_POLY1305, ECDHE_RSA_WITH_CHACHA20_POLY1305
+    # Restrict accept ciphers to:
+    #   ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, ECDHE_RSA_WITH_AES_128_GCM_SHA256, ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+    #   ECDHE_RSA_WITH_AES_256_GCM_SHA384, ECDHE_ECDSA_WITH_CHACHA20_POLY1305, ECDHE_RSA_WITH_CHACHA20_POLY1305
     strict-ciphers: []
 
   influxql:
@@ -78,9 +80,12 @@ influxdb_defaults_service:
     compact_full_write_cold_duration: ""
     # The rate limit in bytes per second that we will allow TSM compactions to write to disk. (default 48 MiB)
     compact_throughput_burst: ""
-    # The maximum number of concurrent full and level compactions that can run at one time.  A value of 0 results in 50% of runtime.GOMAXPROCS(0) used at runtime.  Any number greater than 0 limits compactions to that value.  This setting does not apply to cache snapshotting.
+    # The maximum number of concurrent full and level compactions that can run at one time.
+    # A value of 0 results in 50% of runtime.GOMAXPROCS(0) used at runtime.  Any number greater than 0 limits compactions to that value.
+    # This setting does not apply to cache snapshotting.
     max_concurrent_compactions: ""
-    # The threshold, in bytes, when an index write-ahead log file will compact into an index file. Lower sizes will cause log files to be compacted more quickly and result in lower heap usage at the expense of write throughput. (default 1.0 MiB)
+    # The threshold, in bytes, when an index write-ahead log file will compact into an index file.
+    # Lower sizes will cause log files to be compacted more quickly and result in lower heap usage at the expense of write throughput. (default 1.0 MiB)
     max_index_log_file_size: ""
     # Skip field-size validation on incoming writes.
     no_validate_field_size: false
@@ -98,7 +103,9 @@ influxdb_defaults_service:
     tsm_use_madv_willneed: false
     # Validates incoming writes to ensure keys only have valid unicode characters.
     validate_keys: false
-    # The amount of time that a write will wait before fsyncing. A duration greater than 0 can be used to batch up multiple fsync calls. This is useful for slower disks or when WAL write contention is seen. (default 0s)
+    # The amount of time that a write will wait before fsyncing.
+    # A duration greater than 0 can be used to batch up multiple fsync calls.
+    # This is useful for slower disks or when WAL write contention is seen. (default 0s)
     wal_fsync_delay: ""
     # The max number of writes that will attempt to write to the WAL at a time. (default <nprocs> * 2)
     wal_max_concurrent_writes: ""
@@ -110,7 +117,9 @@ influxdb_defaults_service:
   vault:
     # address of the Vault server expressed as a URL and port, for example: https://127.0.0.1:8200/.
     vault_addr: ""
-    # path to a PEM-encoded CA certificate file on the local disk. This file is used to verify the Vault server's SSL certificate. This environment variable takes precedence over VAULT_CAPATH.
+    # path to a PEM-encoded CA certificate file on the local disk.
+    # This file is used to verify the Vault server's SSL certificate.
+    # This environment variable takes precedence over VAULT_CAPATH.
     vault_cacert: ""
     # path to a directory of PEM-encoded CA certificate files on the local disk. These certificates are used to verify the Vault server's SSL certificate.
     vault_capath: ""
@@ -131,6 +140,8 @@ influxdb_defaults_service:
 
 influxdb_main_version: "{{ influxdb_version[0:1] }}"
 
+influxdb_bin_version: "influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}"
+
 influxdb_install_path: /usr/local/bin/influxdb/{{ influxdb_version }}
 
 influxdb_delegate_to: localhost
@@ -144,12 +155,12 @@ influxdb_local_tmp_directory: "{{
   default(lookup('env', 'HOME') ~ '/.cache/ansible/influxdb', true) }}"
 
 __influxdb_archive:
-  influxdb: "influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}-{{ influxdb_version }}-linux-{{ go_arch }}.tar.gz"
-  influx_client: "influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}-client-{{ influxdb_version }}-linux-{{ go_arch }}.tar.gz"
+  influxdb: "{{ influxdb_bin_version }}-{{ influxdb_version }}-linux-{{ go_arch }}.tar.gz"
+  influx_client: "{{ influxdb_bin_version }}-client-{{ influxdb_version }}-linux-{{ go_arch }}.tar.gz"
 
 __influxdb_binary:
-  influxd: "{{ influxdb_local_tmp_directory }}/influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}_linux_{{ go_arch }}/influxd"
-  influx: "{{ influxdb_local_tmp_directory }}/influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}-client-{{ influxdb_version }}-linux-{{ go_arch }}/influx"
+  influxd: "{{ influxdb_local_tmp_directory }}/{{ influxdb_bin_version }}_linux_{{ go_arch }}/influxd"
+  influx: "{{ influxdb_local_tmp_directory }}/{{ influxdb_bin_version }}-client-{{ influxdb_version }}-linux-{{ go_arch }}/influx"
 
 # ------------------------------------------------------------------------
 
