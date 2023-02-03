@@ -3,7 +3,7 @@
 
 Ansible role to install and configure [influxdb2](https://github.com/influxdata/influxdb).
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/bodsch/ansible-influxdb/CI)][ci]
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-influxdb/main.yml?branch=main)][ci]
 [![GitHub issues](https://img.shields.io/github/issues/bodsch/ansible-influxdb)][issues]
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/bodsch/ansible-influxdb)][releases]
 [![Ansible Quality Score](https://img.shields.io/ansible/quality/50067?label=role%20quality)][quality]
