@@ -3,7 +3,7 @@
 # - block:
 #     - name: get checksum list
 #       set_fact:
-#         __influxdb_checksums: "{{ lookup('url', 'https://github.com/grafana/influxdb/releases/download/v' + influxdb_version + '/SHA256SUMS', wantlist=True) | list }}"
+#         __influxdb_checksums: "{{ lookup('url', 'https://github.com/influxdata/influxdb/releases/download/v' + influxdb_version + '/SHA256SUMS', wantlist=True) | list }}"
 #       run_once: true
 #
 #     - name: get checksum for {{ go_arch }} architecture
