@@ -1,13 +1,9 @@
 ---
-- name: converge
-  hosts: all
-  any_errors_fatal: false
 
-  environment:
-    NETRC: ''
-    # https://github.com/ansible/ansible/issues/77133
-    # https://github.com/ansible/ansible/pull/76542
-    # LANGUAGE: en_UK.utf8
+- name: converge
+  hosts: instance
+  any_errors_fatal: false
+  become: false
 
   roles:
     - role: ansible-influxdb
