@@ -20,10 +20,6 @@
         - default.yaml
       skip: true
 
-- name: update package cache
-  ansible.builtin.package:
-    update_cache: true
-
 - name: define delegate instance for download handling
   ansible.builtin.set_fact:
     influxdb_delegate_to: "{{ ansible_host }}"
