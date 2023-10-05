@@ -2,7 +2,6 @@
 
 galaxy_info:
   role_name: influxdb
-  namespace: bodsch
 
   author: Bodo Schulz
   description: Install and configures InfluxDB2
