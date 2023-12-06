@@ -1,5 +1,13 @@
 ---
 
+- name: create influxdb config directory
+  ansible.builtin.file:
+    path: "{{ influxdb_config_dir }}"
+    state: directory
+    owner: "{{ influxdb_system_user }}"
+    group: root
+    mode: 0755
+
 - name: create influxdb configuration
   ansible.builtin.template:
     src: etc/influxdb/config.yml.j2

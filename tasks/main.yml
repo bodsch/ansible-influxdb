@@ -5,9 +5,6 @@
 
 - name: download archives
   ansible.builtin.include_tasks: download.yml
-  when:
-    - not influxdb_exists or
-      not influxdb_client_exists
 
 - name: install
   ansible.builtin.include_tasks: install.yml

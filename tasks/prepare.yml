@@ -20,43 +20,12 @@
         - default.yaml
       skip: true
 
-- name: define delegate instance for download handling
-  ansible.builtin.set_fact:
-    influxdb_delegate_to: "{{ ansible_host }}"
-    influxdb_local_tmp_directory: "{{
-        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
-        default('/var/cache/ansible/influxdb', true) }}/{{ influxdb_version }}"
-  when:
-    - influxdb_direct_download
-
 - name: install dependency
   ansible.builtin.package:
     name: "{{ influxdb_requirements }}"
     state: present
   when:
     - influxdb_requirements | default([]) | count > 0
-
-- name: define latest version
-  delegate_to: localhost
-  become: false
-  run_once: true
-  when:
-    - influxdb_version == "latest"
-  block:
-    - name: get latest release
-      delegate_to: localhost
-      become: false
-      run_once: true
-      bodsch.scm.github_latest:
-        project: influxdata
-        repository: influxdb
-        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
-        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
-      register: _latest_release
-
-    - name: re-define influxdb_version
-      ansible.builtin.set_fact:
-        influxdb_version: "{{ _latest_release.latest_release }}"
 
 - name: assert wrong influxdb version
   ansible.builtin.assert:
@@ -66,103 +35,11 @@
       - this role handle only influxdb2
       - for influxdb1 support, please use  mkayontour.ansible-influxdb
     quiet: true
-
-- name: detect our installation path '{{ influxdb_install_path | dirname }}'
-  ansible.builtin.stat:
-    path: "{{ influxdb_install_path | dirname }}"
-    get_checksum: false
-  register: stat_influxdb_path
-  ignore_errors: true
-
-- name: old installation
   when:
-    - stat_influxdb_path is defined
-    - stat_influxdb_path.stat is defined
-    - stat_influxdb_path.stat.isdir is defined
-    - not stat_influxdb_path.stat.isdir
-  block:
-    - name: stop old service
-      ansible.builtin.service:
-        name: influxdb
-        state: stopped
-        enabled: false
-      notify:
-        - systemd daemon reload
-
-    - name: remove installed systemd unit
-      ansible.builtin.file:
-        state: absent
-        path: /etc/systemd/system/influxdb.service
-      when:
-        - ansible_service_mgr | lower == "systemd"
-
-    - name: remove installed influxdb
-      ansible.builtin.file:
-        state: absent
-        path: "{{ stat_influxdb_path.stat.path }}"
-
-- name: flush handlers
-  ansible.builtin.meta: flush_handlers
-
-- name: detect installed influxdb binary
-  ansible.builtin.stat:
-    path: "{{ influxdb_install_path }}/influxd"
-  register: stat_influxdb_binary
-
-- name: detect installed influx client binary
-  ansible.builtin.stat:
-    path: "{{ influxdb_install_path }}/influx"
-  register: stat_influx_client_binary
-
-- name: create download directory
-  become: false
-  delegate_to: "{{ influxdb_delegate_to }}"
-  ansible.builtin.file:
-    path: "{{ influxdb_local_tmp_directory }}"
-    state: directory
-    mode: 0750
-
-- name: user and group handling
-  when:
-    - influxdb_system_user != "root"
-  block:
-    - name: create influxdb group
-      ansible.builtin.group:
-        name: "{{ influxdb_system_group }}"
-        state: present
-        system: true
-
-    - name: create influxdb user
-      ansible.builtin.user:
-        name: "{{ influxdb_system_user }}"
-        groups: "{{ influxdb_system_group }}"
-        append: true
-        shell: /usr/sbin/nologin
-        system: true
-        createhome: false
-        home: "{{ influxdb_storage_dir }}"
-
-- name: create install directory
-  ansible.builtin.file:
-    path: "{{ influxdb_install_path }}"
-    state: directory
-    owner: "{{ influxdb_system_user }}"
-    group: "{{ influxdb_system_group }}"
-    mode: 0755
-
-- name: fix directory rights for {{ influxdb_install_path | dirname }}
-  ansible.builtin.file:
-    path: "{{ influxdb_install_path | dirname }}"
-    state: directory
-    owner: "{{ influxdb_system_user }}"
-    group: "{{ influxdb_system_group }}"
-    mode: 0755
-    recurse: true
+    - influxdb_version != "latest"
 
 - name: merge influxdb configuration between defaults and custom
   ansible.builtin.set_fact:
     influxdb_service: "{{ influxdb_defaults_service | combine(influxdb_service, recursive=True) }}"
-    influxdb_exists: "{{ stat_influxdb_binary.stat.exists }}"
-    influxdb_client_exists: "{{ stat_influx_client_binary.stat.exists }}"
 
 ...

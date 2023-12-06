@@ -1,118 +1,156 @@
 ---
 
-# - block:
-#     - name: get checksum list
-#       set_fact:
-#         __influxdb_checksums: "{{ lookup('url', 'https://github.com/influxdata/influxdb/releases/download/v' + influxdb_version + '/SHA256SUMS', wantlist=True) | list }}"
-#       run_once: true
-#
-#     - name: get checksum for {{ go_arch }} architecture
-#       set_fact:
-#         __influxdb_checksum: "{{ __influxdb_checksums | influxdb_checksum(item, 'linux', go_arch) }}"
-#   delegate_to: localhost
+- name: get latest release
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when:
+    - influxdb_version == "latest"
+  block:
+    - name: get latest release
+      delegate_to: localhost
+      become: false
+      run_once: true
+      bodsch.scm.github_latest:
+        project: influxdata
+        repository: influxdb
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+        github_tags: "{{ influxdb_scm.use_tags | default('false') }}"
+        without_beta: "{{ influxdb_scm.without_beta | default('false') }}"
+        filter_elements: "{{ influxdb_scm.version_filter | default([]) }}"
+      register: _latest_release
 
-- name: download influxdb archiv from {{ influxdb_release_download_url }}
+    - name: re-define influxdb_version
+      ansible.builtin.set_fact:
+        influxdb_version: "{{ _latest_release.latest_release }}"
+
+- name: define download information
+  ansible.builtin.set_fact:
+    influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) }}"
+
+- name: define delegate instance for download handling
+  ansible.builtin.set_fact:
+    influxdb_delegate_to: "{{ ansible_host }}"
+    influxdb_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/influxdb', true) }}/{{ influxdb_version }}"
+  when:
+    - influxdb_direct_download
+
+- name: create download directory
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  ansible.builtin.get_url:
-    url: "{{ influxdb_release_download_url }}/{{ __influxdb_archive.influxdb }}"
-    dest: "{{ influxdb_local_tmp_directory }}/"
-    mode: 0640
-    # checksum: "sha256:{{ __influxdb_checksum }}"
-  register: _download_archive
-  until: _download_archive is succeeded
-  retries: 10
-  delay: 5
-  check_mode: false
+  ansible.builtin.file:
+    path: "{{ influxdb_local_tmp_directory }}"
+    state: directory
+    mode: 0750
 
-- name: download influx-client archiv from {{ influxdb_release_download_url }}
+- name: detect the downloaded influxdb archive
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  ansible.builtin.get_url:
-    url: "{{ influxdb_release_download_url }}/{{ __influxdb_archive.influx_client }}"
-    dest: "{{ influxdb_local_tmp_directory }}/"
-    mode: 0640
-    # checksum: "sha256:{{ __influxdb_checksum }}"
-  register: _download_archive
-  until: _download_archive is succeeded
-  retries: 10
-  delay: 5
-  check_mode: false
+  ansible.builtin.stat:
+    path: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.files.influxdb }}"
+  register: stat_influxdb_archive
+
+- name: detect the downloaded influx client archive
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.files.influx_client }}"
+  register: stat_influx_client_archive
+
+- name: download
+  when:
+    - (stat_influxdb_archive.stat is defined and not stat_influxdb_archive.stat.exists | default('false')) or
+      (stat_influx_client_archive.stat is defined and not stat_influx_client_archive.stat.exists | default('false'))
+  block:
+    - name: download influxdb archiv {{ influxdb_release.files.influxdb }}
+      become: false
+      delegate_to: "{{ influxdb_delegate_to }}"
+      run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ influxdb_release.download_url }}/{{ influxdb_release.files.influxdb }}"
+        dest: "{{ influxdb_local_tmp_directory }}/"
+        mode: 0640
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 10
+      delay: 5
+      check_mode: false
+
+    - name: download influx-client archiv {{ influxdb_release.files.influx_client }}
+      become: false
+      delegate_to: "{{ influxdb_delegate_to }}"
+      run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ influxdb_release.download_url }}/{{ influxdb_release.files.influx_client }}"
+        dest: "{{ influxdb_local_tmp_directory }}/"
+        mode: 0640
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 10
+      delay: 5
+      check_mode: false
+
+  rescue:
+    - name: delete download directory
+      become: false
+      delegate_to: "{{ influxdb_delegate_to }}"
+      run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ influxdb_local_tmp_directory }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred when downloading the archive.
+
+- name: detect extracted influxdb
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influxd }}"
+  register: stat_influxdb_binary
 
 - name: extract influxdb archiv
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
   ansible.builtin.unarchive:
-    src: "{{ influxdb_local_tmp_directory }}/{{ __influxdb_archive.influxdb }}"
+    src: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.files.influxdb }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
     copy: false
+    extra_opts:
+      - --strip-components=1
+  when:
+    - stat_influxdb_binary.stat is defined
+    - not stat_influxdb_binary.stat.exists | default('false')
+
+- name: detect extracted influx-client
+  become: false
+  delegate_to: "{{ influxdb_delegate_to }}"
+  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influx }}"
+  register: stat_influx_client_binary
 
 - name: extract influx-client archiv
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
   ansible.builtin.unarchive:
-    src: "{{ influxdb_local_tmp_directory }}/{{ __influxdb_archive.influx_client }}"
+    src: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.files.influx_client }}"
     dest: "{{ influxdb_local_tmp_directory }}/"
     copy: false
-
-- name: detect binary file for influxdb
-  become: false
-  delegate_to: "{{ influxdb_delegate_to }}"
-  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  ansible.builtin.stat:
-    path: "{{ __influxdb_binary.influxd }}"
-  register: stat_influxdb_binary
-
-- name: detect binary file for influx-client
-  become: false
-  delegate_to: "{{ influxdb_delegate_to }}"
-  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  ansible.builtin.stat:
-    path: "{{ __influxdb_binary.influx }}"
-  register: stat_client_binary
-
-- name: influxdb
+    extra_opts:
+      - --strip-components=1
   when:
-    - stat_influxdb_binary.stat.exists
-  block:
-    - name: propagate influxd binary
-      ansible.builtin.copy:
-        src: "{{ __influxdb_binary.influxd }}"
-        dest: "{{ influxdb_install_path }}/influxd"
-        mode: 0755
-        owner: "{{ influxdb_system_user }}"
-        group: "{{ influxdb_system_group }}"
-        remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
-
-    - name: make sure influxd is executable
-      ansible.builtin.file:
-        path: "{{ influxdb_install_path }}/influxd"
-        mode: 0755
-        owner: "{{ influxdb_system_user }}"
-        group: "{{ influxdb_system_group }}"
-
-- name: influx-client
-  when:
-    - stat_client_binary.stat.exists
-  block:
-    - name: propagate influx binary
-      ansible.builtin.copy:
-        src: "{{ __influxdb_binary.influx }}"
-        dest: "{{ influxdb_install_path }}/influx"
-        mode: 0755
-        owner: "{{ influxdb_system_user }}"
-        group: "{{ influxdb_system_group }}"
-        remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
-
-    - name: make sure influx is executable
-      ansible.builtin.file:
-        path: "{{ influxdb_install_path }}/influx"
-        mode: 0755
-        owner: "{{ influxdb_system_user }}"
-        group: "{{ influxdb_system_group }}"
+    - stat_influx_client_binary.stat is defined
+    - not stat_influx_client_binary.stat.exists | default('false')
 
 ...

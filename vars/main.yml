@@ -1,5 +1,19 @@
 ---
 
+influxdb_main_version: "{{ influxdb_version[0:1] }}"
+
+influxdb_bin_version: "influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}"
+
+influxdb_install_path: /opt/influxdb/{{ influxdb_version }}
+
+influxdb_delegate_to: localhost
+
+influxdb_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/influxdb', true) }}/{{ influxdb_version }}"
+
+influxdb_requirements: []
+
 influxdb_defaults_service:
   # supported log levels are debug, info, and error (default info)
   log:
@@ -138,39 +152,27 @@ influxdb_defaults_service:
     # vault authentication token
     vault_token: ""
 
-influxdb_main_version: "{{ influxdb_version[0:1] }}"
-
-influxdb_bin_version: "influxdb{{ influxdb_main_version if influxdb_main_version | int == 2 else '' }}"
-
-influxdb_install_path: /usr/local/bin/influxdb/{{ influxdb_version }}
-
-influxdb_delegate_to: localhost
-
-influxdb_requirements: []
+# ----------------------------------------------------------------------------------------
 
 influxdb_defaults_directory: /etc/default
 
-influxdb_local_tmp_directory: "{{
-  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
-  default(lookup('env', 'HOME') ~ '/.cache/ansible/influxdb', true) }}"
-
-__influxdb_archive:
-  influxdb: "{{ influxdb_bin_version }}-{{ influxdb_version }}-linux-{{ go_arch }}.tar.gz"
-  influx_client: "{{ influxdb_bin_version }}-client-{{ influxdb_version }}-linux-{{ go_arch }}.tar.gz"
-
-__influxdb_binary:
-  influxd: "{{ influxdb_local_tmp_directory }}/{{ influxdb_bin_version }}_linux_{{ go_arch }}/influxd"
-  influx: "{{ influxdb_local_tmp_directory }}/{{ influxdb_bin_version }}-client-{{ influxdb_version }}-linux-{{ go_arch }}/influx"
+influxdb_defaults_release:
+  download_url: "https://dl.influxdata.com/influxdb/releases"
+  api_url: ""
+  files:
+    influxdb: "{{ influxdb_bin_version }}-{{ influxdb_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"
+    influx_client: "{{ influxdb_bin_version }}-client-{{ influxdb_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"
+  binaries:
+    influxd: "influxd"
+    influx: "influx"
 
 # ------------------------------------------------------------------------
 
 go_arch_map:
   x86_64: 'amd64'
   aarch64: 'arm64'
-  armv7l: 'armv7'
-  armv6l: 'armv6'
 
-go_arch: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
 
 systemd_lib_directory: /lib/systemd/system
 
