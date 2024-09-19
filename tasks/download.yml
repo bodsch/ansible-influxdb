@@ -26,9 +26,9 @@
         influxdb_version: "{{ _latest_release.latest_release }}"
         # influxdb_download_url: "https://api.github.com/repos/influxdata/influxdb/tarball/v{{ _latest_release.latest_release }}"
 
-- name: define download information
-  ansible.builtin.set_fact:
-    influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) }}"
+# - name: define download information
+#   ansible.builtin.set_fact:
+#     influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) | influxdb_release_filename(influxdb_version) }}"
 
 - name: define delegate instance for download handling
   ansible.builtin.set_fact:
@@ -39,6 +39,16 @@
   when:
     - influxdb_direct_download
 
+- name: merge influxdb configuration between defaults and custom
+  ansible.builtin.set_fact:
+    influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) }}"
+
+- name: fix release filename for influxdb archive
+  #when:
+  #  - influxdb_version is version_compare('2.7.1', '>' )
+  ansible.builtin.set_fact:
+    influxdb_release: "{{ influxdb_release | influxdb_fix_release(influxdb_version, version='2.7.1') }}"
+
 - name: define influxdb_download_url
   ansible.builtin.set_fact:
     influxdb_download_url: "{{ influxdb_release.download_url }}/{{ influxdb_release.files.influxdb }}"
@@ -47,16 +57,12 @@
   ansible.builtin.set_fact:
     influxdb_client_download_url: "{{ influxdb_release.download_url }}/{{ influxdb_release.files.influx_client }}"
 
-- name: fix release filename for influxdb archive
-  #when:
-  #  - influxdb_version is version_compare('2.7.1', '>' )
-  ansible.builtin.set_fact:
-    influxdb_download_url: "{{ influxdb_download_url | influxdb_fix_release(influxdb_version, version='2.7.1') }}" # regex_replace('-linux-amd64', '_linux_amd64' ) }}"
-
-- name: fix release filename fonr influxdb-client archive
-  ansible.builtin.set_fact:
-    influxdb_client_download_url: "{{ influxdb_download_url | influxdb_fix_release(influxdb_version, version_list=['2.7.1']) }}"
-
+- name: d
+  debug:
+    msg:
+      - "{{ influxdb_download_url }}"
+      - "{{ influxdb_client_download_url }}"
+      - "{{ influxdb_release }}"
 
 - name: create download directory
   become: false

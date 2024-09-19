@@ -1,6 +1,9 @@
 ---
 
+# see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influxdb/
 influxdb_version: "2.4.0"
+# see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influx-cli/
+influxdb_cli_version: "{{ influxdb_version }}"
 
 influxdb_scm:
   use_tags: false
