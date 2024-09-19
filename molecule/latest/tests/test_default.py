@@ -86,11 +86,14 @@ def local_facts(host):
 def test_version(host, get_vars):
     """
     """
-    version = local_facts(host).get("version")
+    version = local_facts(host).get("version", {})
+    influxd_version = version.get("influxd", None)
 
-    version_dir = f"/usr/local/bin/influxdb/{version}"
+    version_dir = f"/opt/influxdb/{influxd_version}"
     current_link = "/usr/bin/influxd"
 
+    print(version)
+    print(influxd_version)
     print(version_dir)
 
     directory = host.file(version_dir)
