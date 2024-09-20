@@ -1,4 +1,5 @@
-{{ ansible_managed | comment }}
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
 
 [Unit]
 Description       = InfluxDB is an open-source, distributed, time series database
@@ -26,6 +27,7 @@ ExecStart         = /usr/bin/influxd $OPTIONS
 LimitNOFILE       = 65000
 SyslogIdentifier  = influxdb
 Restart           = always
+RestartSec        = 30
 
 [Install]
 Alias             = influxd.service

@@ -22,43 +22,67 @@
 
 - name: create install directory
   ansible.builtin.file:
-    path: "{{ influxdb_install_path }}"
+    path: "{{ item }}"
     state: directory
     owner: "{{ influxdb_system_user }}"
     group: "{{ influxdb_system_group }}"
-    mode: 0755
+    mode: "0755"
+  loop:
+    - "{{ influxdb_install_paths.influxd }}"
+    - "{{ influxdb_install_paths.influx }}"
 
-- name: detect extracted binary file for influxdb on '{{ influxdb_delegate_to }}'
+- name: find influx binaries
   become: false
   delegate_to: "{{ influxdb_delegate_to }}"
   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  ansible.builtin.stat:
-    path: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influxd }}"
-  register: stat_influxdb_file_binary
+  ansible.builtin.find:
+    paths: "{{ influxdb_local_tmp_directory }}"
+    file_type: file
+    use_regex: yes
+    patterns:
+      - "^{{ influxdb_release.binaries.influxd }}$"
+      - "^{{ influxdb_release.binaries.influx }}$"
+    recurse: true
+  register: found_influx_binaries
 
-- name: detect extracted binary file for influx-client on '{{ influxdb_delegate_to }}'
-  become: false
-  delegate_to: "{{ influxdb_delegate_to }}"
-  run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
-  ansible.builtin.stat:
-    path: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influx }}"
-  register: stat_influx_client_file_binary
+- name: define influx_binaries
+  ansible.builtin.set_fact:
+    influx_binaries: "{{ found_influx_binaries.files | influx_binaries() }}"
+  when:
+    - found_influx_binaries.files is defined
+    - found_influx_binaries.files | count > 0
+
+# - name: detect extracted binary file for influxdb on '{{ influxdb_delegate_to }}'
+#   become: false
+#   delegate_to: "{{ influxdb_delegate_to }}"
+#   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
+#   ansible.builtin.stat:
+#     path: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influxd }}"
+#   register: stat_influxdb_file_binary
+#
+# - name: detect extracted binary file for influx-client on '{{ influxdb_delegate_to }}'
+#   become: false
+#   delegate_to: "{{ influxdb_delegate_to }}"
+#   run_once: "{{ 'false' if influxdb_direct_download else 'true' }}"
+#   ansible.builtin.stat:
+#     path: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influx }}"
+#   register: stat_influx_client_file_binary
 
 - name: fail when extracted binaries are missing
   ansible.builtin.fail:
     msg: "missing extracted binaries on ansible controller"
   when:
-    - not stat_influxdb_file_binary.stat.exists or
-      not stat_influx_client_file_binary.stat.exists
+    - influx_binaries[influxdb_release.binaries.influxd] | default("") | string | length == 0 or
+      influx_binaries[influxdb_release.binaries.influx] | default("") | string | length == 0
 
 - name: detect installed influxdb binary
   ansible.builtin.stat:
-    path: "{{ influxdb_install_path }}/influxd"
+    path: "{{ influxdb_install_paths.influxd }}/influxd"
   register: stat_influxdb_binary
 
 - name: detect installed influx-client binary
   ansible.builtin.stat:
-    path: "{{ influxdb_install_path }}/influx"
+    path: "{{ influxdb_install_paths.influx }}/influx"
   register: stat_influx_client_binary
 
 - name: detect activated influxdb binary
@@ -74,54 +98,57 @@
 - name: install and activate influx
   when:
     - (stat_influxdb_binary.stat is defined and not stat_influxdb_binary.stat.exists | default('false')) or
-      not stat_influxdb_activated.stat | bodsch.core.linked_version(influxdb_install_path, influxdb_version) or
+      not stat_influxdb_activated.stat | bodsch.core.linked_version(influxdb_install_paths.influxd, influxdb_version) or
       (stat_influx_client_binary.stat is defined and not stat_influx_client_binary.stat.exists | default('false')) or
-      not stat_influx_client_activated.stat | bodsch.core.linked_version(influxdb_install_path, influxdb_version)
+      not stat_influx_client_activated.stat | bodsch.core.linked_version(influxdb_install_paths.influx, influxdb_cli_version)
   block:
+    # indluxd
     - name: propagate influxd binary
       ansible.builtin.copy:
-        src: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influxd }}"
-        dest: "{{ influxdb_install_path }}/influxd"
-        mode: 0755
+        # src: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influxd }}"
+        src: "{{ influx_binaries[influxdb_release.binaries.influxd] }}"
+        dest: "{{ influxdb_install_paths.influxd }}/influxd"
+        mode: "0755"
         owner: "{{ influxdb_system_user }}"
         group: "{{ influxdb_system_group }}"
         remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
 
     - name: make sure influxd is executable
       ansible.builtin.file:
-        path: "{{ influxdb_install_path }}/influxd"
-        mode: 0755
+        path: "{{ influxdb_install_paths.influxd }}/influxd"
+        mode: "0755"
         owner: "{{ influxdb_system_user }}"
         group: "{{ influxdb_system_group }}"
 
     - name: create link to influxd binary
       ansible.builtin.file:
-        src: "{{ influxdb_install_path }}/influxd"
+        src: "{{ influxdb_install_paths.influxd }}/influxd"
         dest: /usr/bin/influxd
         state: link
         force: true
       notify:
         - restart service
 
+    # influx (cli tool)
     - name: propagate influx binary
       ansible.builtin.copy:
-        src: "{{ influxdb_local_tmp_directory }}/{{ influxdb_release.binaries.influx }}"
-        dest: "{{ influxdb_install_path }}/influx"
-        mode: 0755
+        src: "{{ influx_binaries[influxdb_release.binaries.influx] }}"
+        dest: "{{ influxdb_install_paths.influx }}/influx"
+        mode: "0755"
         owner: "{{ influxdb_system_user }}"
         group: "{{ influxdb_system_group }}"
         remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
 
     - name: make sure influx is executable
       ansible.builtin.file:
-        path: "{{ influxdb_install_path }}/influx"
-        mode: 0755
+        path: "{{ influxdb_install_paths.influx }}/influx"
+        mode: "0755"
         owner: "{{ influxdb_system_user }}"
         group: "{{ influxdb_system_group }}"
 
     - name: create link to influx binary
       ansible.builtin.file:
-        src: "{{ influxdb_install_path }}/influx"
+        src: "{{ influxdb_install_paths.influx }}/influx"
         dest: /usr/bin/influx
         state: link
         force: true
@@ -129,8 +156,11 @@
   rescue:
     - name: delete install directory
       ansible.builtin.file:
-        path: "{{ influxdb_install_path }}"
+        path: "{{ item }}"
         state: absent
+      loop:
+        - influxdb_install_paths.influxd
+        - influxdb_install_paths.influx
 
     - name: exit with fail
       ansible.builtin.fail:
@@ -142,7 +172,7 @@
     state: directory
     owner: "{{ influxdb_system_user }}"
     group: "{{ influxdb_system_group }}"
-    mode: 0755
+    mode: "0755"
   loop:
     - "{{ influxdb_storage_dir }}"
     - "{{ influxdb_storage_dir }}/meta"
@@ -161,7 +191,7 @@
         force: true
         owner: root
         group: "{{ influxdb_system_group }}"
-        mode: 0640
+        mode: "0640"
       notify:
         # - validate config
         - restart service
@@ -172,7 +202,7 @@
         dest: "{{ systemd_lib_directory }}/influxdb.service"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
       notify:
         - systemd daemon reload
         - restart service
@@ -187,7 +217,7 @@
         dest: "/etc/conf.d/influxdb"
         owner: root
         group: root
-        mode: 0644
+        mode: "0644"
 
     - name: create openrc init configuration
       ansible.builtin.template:
@@ -195,12 +225,14 @@
         dest: "/etc/init.d/influxdb"
         owner: root
         group: root
-        mode: 0750
+        mode: "0750"
 
 - name: create custom fact file
   bodsch.core.facts:
     name: influxdb
     facts:
-      version: "{{ influxdb_version }}"
+      version:
+        influxd: "{{ influxdb_version }}"
+        influx: "{{ influxdb_cli_version }}"
 
 ...

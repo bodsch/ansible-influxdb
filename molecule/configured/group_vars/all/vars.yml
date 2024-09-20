@@ -2,6 +2,8 @@
 
 influxdb_version: "2.7.2"
 
+influxdb_cli_version: "2.7.1"
+
 influxdb_service:
   # supported log levels are debug, info, and error (default info)
   log:

@@ -136,7 +136,7 @@ jobs:
         scenario:
           - configured
           - updates
-          # - latest
+          - latest
 
     steps:
       - name: check out the codebase.
