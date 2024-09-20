@@ -11,6 +11,12 @@ pp = pprint.PrettyPrinter()
 testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
     os.environ['MOLECULE_INVENTORY_FILE']).get_hosts('all')
 
+def pp_json(json_thing, sort=True, indents=2):
+    if type(json_thing) is str:
+        print(json.dumps(json.loads(json_thing), sort_keys=sort, indent=indents))
+    else:
+        print(json.dumps(json_thing, sort_keys=sort, indent=indents))
+    return None
 
 def base_directory():
     cwd = os.getcwd()
@@ -138,13 +144,26 @@ def test_directories(host, directories):
     assert d.is_directory
 
 
-@pytest.mark.parametrize("files", [
-    "/etc/influxdb/config.yml",
-    "/etc/default/influxdb"
-])
-def test_files(host, files):
-    f = host.file(files)
-    assert f.is_file
+def test_files(host, get_vars):
+    """
+    """
+    distribution = host.system_info.distribution
+    release = host.system_info.release
+
+    # print(f"distribution: {distribution}")
+    # print(f"release     : {release}")
+
+    files = []
+    files.append("/etc/influxdb/config.yml")
+
+    if not distribution == "artix":
+        files.append("/etc/default/influxdb")
+
+    # print(files)
+
+    for _file in files:
+        f = host.file(_file)
+        assert f.is_file
 
 
 def test_service_running_and_enabled(host):
