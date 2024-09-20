@@ -83,13 +83,13 @@ def local_facts(host):
     return host.ansible("setup").get("ansible_facts").get("ansible_local").get("influxdb")
 
 
-def test_version(host, get_vars):
+def test_version_influxd(host, get_vars):
     """
     """
     version = local_facts(host).get("version", {})
     influxd_version = version.get("influxd", None)
 
-    version_dir = f"/opt/influxdb/{influxd_version}"
+    version_dir = f"/opt/influxd/{influxd_version}"
     current_link = "/usr/bin/influxd"
 
     print(version)
@@ -102,6 +102,27 @@ def test_version(host, get_vars):
     link  = host.file(current_link)
     assert link.is_symlink
     assert link.linked_to == f"{version_dir}/influxd"
+
+
+def test_version_influx(host, get_vars):
+    """
+    """
+    version = local_facts(host).get("version", {})
+    influx_version = version.get("influx", None)
+
+    version_dir = f"/opt/influx/{influx_version}"
+    current_link = "/usr/bin/influx"
+
+    print(version)
+    print(influx_version)
+    print(version_dir)
+
+    directory = host.file(version_dir)
+    assert directory.is_directory
+
+    link  = host.file(current_link)
+    assert link.is_symlink
+    assert link.linked_to == f"{version_dir}/influx"
 
 
 @pytest.mark.parametrize("directories", [

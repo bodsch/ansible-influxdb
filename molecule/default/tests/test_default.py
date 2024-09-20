@@ -83,6 +83,48 @@ def local_facts(host):
     return host.ansible("setup").get("ansible_facts").get("ansible_local").get("influxdb")
 
 
+def test_version_influxd(host, get_vars):
+    """
+    """
+    version = local_facts(host).get("version", {})
+    influxd_version = version.get("influxd", None)
+
+    version_dir = f"/opt/influxd/{influxd_version}"
+    current_link = "/usr/bin/influxd"
+
+    print(version)
+    print(influxd_version)
+    print(version_dir)
+
+    directory = host.file(version_dir)
+    assert directory.is_directory
+
+    link  = host.file(current_link)
+    assert link.is_symlink
+    assert link.linked_to == f"{version_dir}/influxd"
+
+
+def test_version_influx(host, get_vars):
+    """
+    """
+    version = local_facts(host).get("version", {})
+    influx_version = version.get("influx", None)
+
+    version_dir = f"/opt/influx/{influx_version}"
+    current_link = "/usr/bin/influx"
+
+    print(version)
+    print(influx_version)
+    print(version_dir)
+
+    directory = host.file(version_dir)
+    assert directory.is_directory
+
+    link  = host.file(current_link)
+    assert link.is_symlink
+    assert link.linked_to == f"{version_dir}/influx"
+
+
 @pytest.mark.parametrize("directories", [
     "/etc/influxdb",
     "/var/lib/influxdb",
@@ -96,41 +138,13 @@ def test_directories(host, directories):
     assert d.is_directory
 
 
-def test_files(host, get_vars):
-    """
-    """
-    distribution = host.system_info.distribution
-    release = host.system_info.release
-
-    print(f"distribution: {distribution}")
-    print(f"release     : {release}")
-
-    version = local_facts(host).get("version")
-
-    install_dir = get_vars.get("influxdb_install_path")
-    defaults_dir = get_vars.get("influxdb_defaults_directory")
-    config_dir = get_vars.get("influxdb_config_dir")
-
-    if 'latest' in install_dir:
-        install_dir = install_dir.replace('latest', version)
-
-    files = []
-    files.append("/usr/bin/influxd")
-    files.append("/usr/bin/influx")
-
-    if install_dir:
-        files.append(f"{install_dir}/influxd")
-        files.append(f"{install_dir}/influx")
-    if defaults_dir and not distribution == "artix":
-        files.append(f"{defaults_dir}/influxdb")
-    if config_dir:
-        files.append(f"{config_dir}/config.yml")
-
-    print(files)
-
-    for _file in files:
-        f = host.file(_file)
-        assert f.is_file
+@pytest.mark.parametrize("files", [
+    "/etc/influxdb/config.yml",
+    "/etc/default/influxdb"
+])
+def test_files(host, files):
+    f = host.file(files)
+    assert f.is_file
 
 
 def test_service_running_and_enabled(host):

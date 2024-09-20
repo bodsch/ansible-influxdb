@@ -15,7 +15,6 @@ display = Display()
 
 class FilterModule(object):
     """
-        Ansible file jinja2 tests
     """
 
     def filters(self):
@@ -35,9 +34,6 @@ class FilterModule(object):
                 value = data.get("files", {}).get("influxdb")
                 data["files"]["influxdb"] = re.sub(r'-linux-amd64', '_linux_amd64', value)
 
-        # display.v(f"= result: {data}")
-        # display.v(f"= result: {result}")
-
         return data
 
     def version_compare(self, ver1, specifier, ver2):
@@ -54,18 +50,14 @@ class FilterModule(object):
     def influx_binaries(self, data):
         """
         """
-        # display.v(f"influx_binaries(self, {data})")
-
         files_with_path = []
         files = []
         _dict = {}
 
         if isinstance(data, list):
-            display.v(f"  - {data}")
-
             files_with_path = [x.get('path') for x in data if x.get('path')]
             files = [os.path.basename(x) for x in files_with_path]
 
-            _dict = {k: x  for k in files for x in files_with_path if os.path.basename(x) == k}
+            _dict = {k: x for k in files for x in files_with_path if os.path.basename(x) == k}
 
         return _dict

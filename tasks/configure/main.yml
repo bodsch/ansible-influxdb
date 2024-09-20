@@ -6,7 +6,7 @@
     state: directory
     owner: "{{ influxdb_system_user }}"
     group: root
-    mode: 0755
+    mode: "0755"
 
 - name: create influxdb configuration
   ansible.builtin.template:
@@ -14,7 +14,7 @@
     dest: "{{ influxdb_config_dir }}/config.yml"
     owner: root
     group: "{{ influxdb_system_group }}"
-    mode: 0644
+    mode: "0644"
   notify:
     - restart service
 
