@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Optional, List
 from contextlib import contextmanager
 
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 VERSION = "2.1.1"
@@ -82,7 +82,7 @@ def gather_collections_files(root: Path, scenario: str) -> List[Path]:
     """
     files: List[Path] = []
     # 1. root galaxy.yml
-    g = root / 'galaxy.yml'
+    g = root / 'collections.yml'
     if g.exists():
         files.append(g)
 
@@ -104,9 +104,6 @@ class ToxRunner:
     required_env_vars = [
         'TOX_ANSIBLE',
         'TOX_SCENARIO',
-        #'COLLECTION_NAMESPACE',
-        #'COLLECTION_NAME',
-        # 'COLLECTION_ROLE',
     ]
 
     def __init__(self, tox_test: Optional[str] = None):
