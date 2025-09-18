@@ -22,7 +22,7 @@ ExecReload        = /bin/kill -HUP $MAINPID
 
 # ExecStartPre      = /usr/bin/influxdb -config.file {{ influxdb_config_dir }}/influxdb.yml -verify-config -log.level debug
 ExecStartPre      = /bin/chown --recursive {{ influxdb_system_user }}:{{ influxdb_system_group }} {{ influxdb_storage_dir }}
-ExecStart         = /usr/bin/influxd $OPTIONS
+ExecStart         = /usr/bin/{{ influxdb_release.binaries.core }} $OPTIONS
 
 LimitNOFILE       = 65000
 SyslogIdentifier  = influxdb

@@ -7,7 +7,7 @@ influxdb_cli_version: "{{ influxdb_version }}"
 
 influxdb_scm:
   use_tags: false
-  without_beta: false
+  without_beta: true
   version_filter:
     - ".*test*"
     - ".*preview"

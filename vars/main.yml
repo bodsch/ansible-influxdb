@@ -7,8 +7,8 @@ influxdb_bin_version: "influxdb{{ influxdb_main_version if influxdb_main_version
 influxdb_install_path: /opt/influxdb/{{ influxdb_version }}
 
 influxdb_install_paths:
-  influxd: /opt/influxd/{{ influxdb_version }}
-  influx: /opt/influx/{{ influxdb_cli_version }}
+  core: /opt/influxd/{{ influxdb_version }}
+  client: /opt/influx/{{ influxdb_cli_version }}
 
 influxdb_delegate_to: localhost
 
@@ -16,23 +16,35 @@ influxdb_local_tmp_directory: "{{
   lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
   default(lookup('env', 'HOME') ~ '/.cache/ansible/influxdb', true) }}/{{ influxdb_version }}"
 
-influxdb_requirements: []
+influxdb_requirements:
+  - python3-requests
 
 influxdb_defaults_service:
-  # supported log levels are debug, info, and error (default info)
   log:
+    # v2 - supported log levels are debug, info, and error (default info)
     level: info
+    # v3 -
+    filter: "info"
+    # v3 -
+    format: "full"
+    # v3 -
+    destination: "stdout"
+
   # add an instance id for replications to prevent collisions and allow querying by edge node
   instance_id: "{{ ansible_hostname }}"
-  # Don't expose metrics over HTTP at /metrics
+
   metrics:
+    # v2 - Don't expose metrics over HTTP at /metrics
     enabled: true
-  # Disable the InfluxDB UI
+
   ui:
+    # v2 - Disable the InfluxDB UI
     enabled: true
   http:
-    # bind address for the REST HTTP API (default ":8086")
+    # v2 - bind address for the REST HTTP API (default ":8086")
     bind_address: ":8086"
+    # v3 - Address for HTTP API requests [default: 0.0.0.0:8181]
+    bind: "127.0.0.1:8181"
     timeouts:
       # max duration the server should keep established connections alive while waiting for new requests.
       # Set to 0 for no timeout (default 3m0s)
@@ -160,8 +172,22 @@ influxdb_defaults_service:
 
 influxdb_defaults_directory: /etc/default
 
+# Version 1
+# https://download.influxdata.com/influxdb/releases/influxdb-1.11.8-linux-amd64.tar.gz
+
+# Version 2
+# https://download.influxdata.com/influxdb/releases/v2.7.12/influxdb2-2.7.12_linux_amd64.tar.gz
+# https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz
+
+# Version 3
+# https://dl.influxdata.com/influxdb/releases/influxdb3-${EDITION_TAG}-${INFLUXDB_VERSION}_${ARTIFACT}.tar.gz"
+# https://dl.influxdata.com/influxdb/releases/influxdb3-core-3.0.0_linux_amd64.tar.gz
+# https://dl.influxdata.com/influxctl/releases/influxctl-v2.10.3-linux-x86_64.tar.gz
+
 influxdb_defaults_release:
-  download_url: "https://dl.influxdata.com/influxdb/releases"
+  download_urls:
+    core: "https://dl.influxdata.com/influxdb/releases"
+    client: "https://dl.influxdata.com/influxdb/releases"
   api_url: ""
   files:
     influxdb: "{{ influxdb_bin_version }}-{{ influxdb_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"

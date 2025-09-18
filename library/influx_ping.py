@@ -35,43 +35,130 @@ class InfluxPing(object):
         self.module = module
 
         self.host = module.params.get("host")
+        self.main_version = module.params.get("main_version")
         self.skip_verify = module.params.get("skip_verify")
         self.http_debug = module.params.get("http_debug")
         self.configs_path = module.params.get("configs_path")
         self.active_config = module.params.get("active_config")
 
-        self._influx = module.get_bin_path("influx", True)
-
     def run(self):
         """
           runner
         """
-        args = []
-        args.append(self._influx)
-        args.append("ping")
+        self.module.log(msg="InfluxPing::run()")
 
-        args += self._common_options()
+        self.module.log(msg=f"  - main_version: {self.main_version}")
 
-        rc, out, err = self._exec(args, False)
 
-        if rc == 0:
+        if int(self.main_version) == 2:
+            _influx_bin = module.get_bin_path("influx", True)
+
+            args = []
+            args.append(_influx_bin)
+            args.append("ping")
+
+            args += self._common_options()
+
+            rc, out, err = self._exec(args, False)
+
+            if rc == 0:
+                return dict(
+                    failed=False,
+                    changed=False,
+                    rc=rc,
+                    cmd=" ".join(args),
+                    stdout=out,
+                    stderr=err
+                )
+            else:
+                return dict(
+                    failed=True,
+                    changed=False,
+                    rc=rc,
+                    cmd=" ".join(args),
+                    stdout=out,
+                    stderr=err
+                )
+
+        if int(self.main_version) == 3:
+            """
+            """
+
+            rc = 1
+            (status_code, result, err) = self._request(url=f"{self.host}/ping")
+
+            _version = result.get("version", None)
+
+            if int(status_code) == 200:
+                rc = 0
+
             return dict(
-                failed=False,
+                failed=(rc == 1),
                 changed=False,
                 rc=rc,
-                cmd=" ".join(args),
-                stdout=out,
-                stderr=err
+                # stdout=result,
             )
-        else:
-            return dict(
-                failed=True,
-                changed=False,
-                rc=rc,
-                cmd=" ".join(args),
-                stdout=out,
-                stderr=err
-            )
+
+    def _request(self, url):
+        """
+        """
+        import requests
+
+        self.module.log(msg=f"InfluxPing::_request(url={url})")
+
+        try:
+            response = requests.get(url, timeout=15)
+
+            self.module.log(msg=f"response: {response}")
+
+            response.raise_for_status()
+
+            self.module.log(msg=f" text    : {response.text} / {type(response.text)}")
+            self.module.log(msg=f" json    : {response.json()} / {type(response.json())}")
+            self.module.log(msg=f" headers : {response.headers}")
+            self.module.log(msg=f" code    : {response.status_code}")
+            self.module.log(msg="------------------------------------------------------------------")
+
+            return (response.status_code, response.json(), None)
+
+        except requests.exceptions.HTTPError as e:
+            self.module.log(msg=f"ERROR   : {e}")
+
+            status_code = e.response.status_code
+            status_message = e.response.json()
+            # self.module.log(msg=f" status_message : {status_message} / {type(status_message)}")
+            # self.module.log(msg=f" status_message : {e.response.json()}")
+
+            return (status_code, None, status_message)
+
+        except ConnectionError as e:
+            error_text = f"{type(e).__name__} {(str(e) if len(e.args) == 0 else str(e.args[0]))}"
+            self.module.log(msg=f"ERROR   : {error_text}")
+
+            self.module.log(msg="------------------------------------------------------------------")
+            return (500, None, error_text)
+
+        except Exception as e:
+            self.module.log(msg=f"ERROR   : {e}")
+            # self.module.log(msg=f" text    : {response.text} / {type(response.text)}")
+            # self.module.log(msg=f" json    : {response.json()} / {type(response.json())}")
+            # self.module.log(msg=f" headers : {response.headers}")
+            # self.module.log(msg=f" code    : {response.status_code}")
+            # self.module.log(msg="------------------------------------------------------------------")
+
+            return (response.status_code, None, response.json())
+
+        except requests.exceptions.RequestException as e:
+            error = f"Request failed: {e}"
+            self.module.log(error)
+            return (419, [], error)
+
+        except ValueError as e:
+            error = f"Error parsing the JSON: {e}"
+            self.module.log(error)
+            return (419, [], error)
+
+        return (200, result, None)
 
     def _common_options(self):
         """
@@ -138,6 +225,10 @@ def main():
                 required=False,
                 type="list",
                 default=[]
+            ),
+            main_version=dict(
+                required=True,
+                type="str",
             ),
         ),
         supports_check_mode=False,

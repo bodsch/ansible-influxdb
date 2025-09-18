@@ -20,6 +20,10 @@
         - default.yaml
       skip: true
 
+# - name: define influxdb release definition
+#   ansible.builtin.set_fact:
+#     influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) | influxdb_update_release(core_version=influxdb_version, client_version=influxdb_cli_version) }}"
+
 - name: install dependency
   ansible.builtin.package:
     name: "{{ influxdb_requirements }}"
@@ -27,10 +31,16 @@
   when:
     - influxdb_requirements | default([]) | count > 0
 
+# - name: d
+#   debug:
+#     msg:
+#       - "{{ influxdb_version }}"
+#       - "{{ influxdb_main_version }}"
+
 - name: assert wrong influxdb version
   ansible.builtin.assert:
     that:
-      - influxdb_main_version | int == 2
+      - influxdb_main_version | int in [2, 3]
     msg:
       - this role handle only influxdb2
       - for influxdb1 support, please use  mkayontour.ansible-influxdb

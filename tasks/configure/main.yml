@@ -1,5 +1,9 @@
 ---
 
+- name: define influxdb http service
+  ansible.builtin.set_fact:
+    influxdb_http: "{{ influxdb_service.http | influxdb_bind(core_version=influxdb_main_version) }}"
+
 - name: create influxdb config directory
   ansible.builtin.file:
     path: "{{ influxdb_config_dir }}"
@@ -26,7 +30,8 @@
 
 - name: ensure influxdb is up and running
   influx_ping:
-    host: "http://127.0.0.1:8086"
+    main_version: "{{ influxdb_main_version }}"
+    host: "{{ influxdb_http }}"
   retries: 10
   delay: 5
   register: _ping
