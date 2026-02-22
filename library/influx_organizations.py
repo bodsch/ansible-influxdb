@@ -4,8 +4,10 @@
 # (c) 2022, Bodo Schulz <bodo@boone-schulz.de>
 
 from __future__ import absolute_import, division, print_function
-from ansible.module_utils.basic import AnsibleModule
+
 import json
+
+from ansible.module_utils.basic import AnsibleModule
 
 # # influx org --help
 # NAME:
@@ -26,12 +28,11 @@ import json
 
 
 class InfluxOrganizations(object):
-    """
-    """
+    """ """
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
 
@@ -48,24 +49,19 @@ class InfluxOrganizations(object):
 
     def run(self):
         """
-          runner
+        runner
         """
         result_state = []
 
         result = dict(
-            rc=0,
-            failed=False,
-            changed=False,
-            msg="Influxdb organisations ..."
+            rc=0, failed=False, changed=False, msg="Influxdb organisations ..."
         )
 
         rc, out, err = self.organization_list()
 
         _out = json.loads(out)
 
-        organisations = list(
-            map(lambda d: d.get('name', 'default value'), _out)
-        )
+        organisations = list(map(lambda d: d.get("name", "default value"), _out))
         self.module.log(msg=f" - existion organisations: {', '.join(organisations)}")
 
         # self.module.log(msg=" - update existing organization")
@@ -83,15 +79,14 @@ class InfluxOrganizations(object):
         #             break
 
         for organization, v in self.organizations.items():
-            """
-            """
+            """ """
             _state = v.get("state", "create")
             # self.module.log(msg=f"   org: '{organization}'")
             # self.module.log(msg=f"     values: '{v}'")
 
             if _state == "create":
                 """
-                  create new organisation
+                create new organisation
                 """
                 if organization in organisations:
                     res = {}
@@ -111,15 +106,12 @@ class InfluxOrganizations(object):
                     result_state.append(res)
                 else:
                     res = {}
-                    res[organization] = dict(
-                        state=err,
-                        failed=True
-                    )
+                    res[organization] = dict(state=err, failed=True)
                     result_state.append(res)
 
             if _state == "delete":
                 """
-                  delete existing organisation
+                delete existing organisation
                 """
                 rc, out, err = self.organization_delete(organization)
 
@@ -131,10 +123,7 @@ class InfluxOrganizations(object):
                     result_state.append(res)
                 else:
                     res = {}
-                    res[organization] = dict(
-                        state=err,
-                        failed=True
-                    )
+                    res[organization] = dict(state=err, failed=True)
                     result_state.append(res)
 
         # define changed for the running tasks
@@ -142,21 +131,16 @@ class InfluxOrganizations(object):
         combined_d = {key: value for d in result_state for key, value in d.items()}
 
         # find all changed and define our variable
-        changed = (len({k: v for k, v in combined_d.items() if v.get('changed')}) > 0)
+        changed = len({k: v for k, v in combined_d.items() if v.get("changed")}) > 0
         # find all failed and define our variable
-        failed = (len({k: v for k, v in combined_d.items() if v.get('failed')}) > 0)
+        failed = len({k: v for k, v in combined_d.items() if v.get("failed")}) > 0
 
-        result = dict(
-            changed=changed,
-            failed=failed,
-            state=result_state
-        )
+        result = dict(changed=changed, failed=failed, state=result_state)
 
         return result
 
     def organization_list(self, org_name=None):
-        """
-        """
+        """ """
         args = []
         args.append(self._influx)
         args.append("org")
@@ -173,9 +157,7 @@ class InfluxOrganizations(object):
         return rc, out, err
 
     def organization_create(self, organization, values):
-        """
-
-        """
+        """ """
         description = values.get("description")
 
         args = []
@@ -198,31 +180,30 @@ class InfluxOrganizations(object):
 
     def organization_delete(self, org_name):
         """
-            # influx org delete --help
-            NAME:
-               influx org delete - Delete organization
+        # influx org delete --help
+        NAME:
+           influx org delete - Delete organization
 
-            USAGE:
-               influx org delete [command options] [arguments...]
+        USAGE:
+           influx org delete [command options] [arguments...]
 
-            COMMON OPTIONS:
-               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
-               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
-               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
-               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
-               --http-debug
-               --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
-               --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
-               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+        COMMON OPTIONS:
+           --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+           --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+           --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+           --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+           --http-debug
+           --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
+           --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
+           --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
 
-            OPTIONS:
-               --id value, -i value  The organization ID [$INFLUX_ORG_ID]
+        OPTIONS:
+           --id value, -i value  The organization ID [$INFLUX_ORG_ID]
         """
         rc, out, err = self.organization_list(org_name)
 
         if rc == 0:
-            """
-            """
+            """ """
             _out = json.loads(out)
 
             org_id = _out[0].get("id")
@@ -245,27 +226,27 @@ class InfluxOrganizations(object):
 
     def organization_update(self, org_name, org_id, values):
         """
-            # influx org update --help
-            NAME:
-               influx org update - Update organization
+        # influx org update --help
+        NAME:
+           influx org update - Update organization
 
-            USAGE:
-               influx org update [command options] [arguments...]
+        USAGE:
+           influx org update [command options] [arguments...]
 
-            COMMON OPTIONS:
-               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
-               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
-               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
-               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
-               --http-debug
-               --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
-               --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
-               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+        COMMON OPTIONS:
+           --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+           --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+           --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+           --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+           --http-debug
+           --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
+           --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
+           --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
 
-            OPTIONS:
-               --id value, -i value           The organization ID [$INFLUX_ORG_ID]
-               --name value, -n value         New name to set on the organization [$INFLUX_ORG]
-               --description value, -d value  New description to set on the organization [$INFLUX_ORG_DESCRIPTION]
+        OPTIONS:
+           --id value, -i value           The organization ID [$INFLUX_ORG_ID]
+           --name value, -n value         New name to set on the organization [$INFLUX_ORG]
+           --description value, -d value  New description to set on the organization [$INFLUX_ORG_DESCRIPTION]
         """
         description = values.get("description")
 
@@ -295,80 +276,80 @@ class InfluxOrganizations(object):
 
     def organization_members(self):
         """
-            # influx org members --help
-            NAME:
-               influx org members - Organization membership commands
+          # influx org members --help
+          NAME:
+             influx org members - Organization membership commands
 
-            USAGE:
-               influx org members command [command options] [arguments...]
+          USAGE:
+             influx org members command [command options] [arguments...]
 
-            COMMANDS:
-               add             Add organization member
-               list, find, ls  List organization members
-               remove          Remove organization member
-          # -------------------------------------------------------
-            # influx org members add --help
-            NAME:
-               influx org members add - Add organization member
+          COMMANDS:
+             add             Add organization member
+             list, find, ls  List organization members
+             remove          Remove organization member
+        # -------------------------------------------------------
+          # influx org members add --help
+          NAME:
+             influx org members add - Add organization member
 
-            USAGE:
-               influx org members add [command options] [arguments...]
+          USAGE:
+             influx org members add [command options] [arguments...]
 
-            COMMON OPTIONS:
-               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
-               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
-               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
-               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
-               --http-debug
-               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+          COMMON OPTIONS:
+             --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+             --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+             --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+             --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+             --http-debug
+             --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
 
-            OPTIONS:
-               --member value, -m value  The member ID
-               --name value, -n value    The organization name [$INFLUX_ORG]
-               --id value, -i value      The organization ID [$INFLUX_ORG_ID]
-               --owner                   Set new member as an owner
-          # -------------------------------------------------------
-            # influx org members remove --help
-            NAME:
-               influx org members remove - Remove organization member
+          OPTIONS:
+             --member value, -m value  The member ID
+             --name value, -n value    The organization name [$INFLUX_ORG]
+             --id value, -i value      The organization ID [$INFLUX_ORG_ID]
+             --owner                   Set new member as an owner
+        # -------------------------------------------------------
+          # influx org members remove --help
+          NAME:
+             influx org members remove - Remove organization member
 
-            USAGE:
-               influx org members remove [command options] [arguments...]
+          USAGE:
+             influx org members remove [command options] [arguments...]
 
-            COMMON OPTIONS:
-               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
-               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
-               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
-               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
-               --http-debug
-               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+          COMMON OPTIONS:
+             --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+             --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+             --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+             --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+             --http-debug
+             --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
 
-            OPTIONS:
-               --member value, -m value  The member ID
-               --name value, -n value    The organization name [$INFLUX_ORG]
-               --id value, -i value      The organization ID [$INFLUX_ORG_ID]
-          # -------------------------------------------------------
-            # influx org members list --help
-            NAME:
-               influx org members list - List organization members
+          OPTIONS:
+             --member value, -m value  The member ID
+             --name value, -n value    The organization name [$INFLUX_ORG]
+             --id value, -i value      The organization ID [$INFLUX_ORG_ID]
+        # -------------------------------------------------------
+          # influx org members list --help
+          NAME:
+             influx org members list - List organization members
 
-            USAGE:
-               influx org members list [command options] [arguments...]
+          USAGE:
+             influx org members list [command options] [arguments...]
 
-            COMMON OPTIONS:
-               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
-               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
-               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
-               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
-               --http-debug
-               --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
-               --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
-               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+          COMMON OPTIONS:
+             --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+             --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+             --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+             --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+             --http-debug
+             --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
+             --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
+             --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
 
-            OPTIONS:
-               --name value, -n value  The organization name [$INFLUX_ORG]
-               --id value, -i value    The organization ID [$INFLUX_ORG_ID]
-          # -------------------------------------------------------
+          OPTIONS:
+             --name value, -n value  The organization name [$INFLUX_ORG]
+             --id value, -i value    The organization ID [$INFLUX_ORG_ID]
+        # -------------------------------------------------------
         """
         args = []
 
@@ -378,8 +359,7 @@ class InfluxOrganizations(object):
         return args
 
     def _common_options(self):
-        """
-        """
+        """ """
         args = []
         args.append("--host")
         args.append(self.host)
@@ -409,7 +389,7 @@ class InfluxOrganizations(object):
 
     def _exec(self, commands, check_rc=True):
         """
-          execute shell program
+        execute shell program
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
 
@@ -418,6 +398,7 @@ class InfluxOrganizations(object):
         # self.module.log(msg=f"  err: '{err}'")
 
         return rc, out, err
+
 
 # ===========================================
 # Module execution.
@@ -428,35 +409,13 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            organizations=dict(
-                required=True,
-                type="dict"
-            ),
-            host=dict(
-                required=True,
-                type="str"
-            ),
-            skip_verify=dict(
-                required=False,
-                type="bool"
-            ),
-            http_debug=dict(
-                required=False,
-                type="bool"
-            ),
-            configs_path=dict(
-                required=False,
-                type="path"
-            ),
-            active_config=dict(
-                required=False,
-                type="list",
-                default=[]
-            ),
-            token=dict(
-                required=False,
-                type="str"
-            ),
+            organizations=dict(required=True, type="dict"),
+            host=dict(required=True, type="str"),
+            skip_verify=dict(required=False, type="bool"),
+            http_debug=dict(required=False, type="bool"),
+            configs_path=dict(required=False, type="path"),
+            active_config=dict(required=False, type="list", default=[]),
+            token=dict(required=False, type="str"),
         ),
         supports_check_mode=False,
     )
@@ -470,5 +429,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

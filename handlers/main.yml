@@ -6,21 +6,21 @@
     daemon_reload: true
     force: true
   when:
-    - ansible_service_mgr | lower == "systemd"
+    - ansible_facts.service_mgr | lower == "systemd"
 
 - name: start service
   ansible.builtin.service:
-    name: influxdb
+    name: "{{ influxdb_release.binaries.core }}"
     state: started
 
 - name: restart service
   ansible.builtin.service:
-    name: influxdb
+    name: "{{ influxdb_release.binaries.core }}"
     state: restarted
 
 - name: reload service
   ansible.builtin.service:
-    name: influxdb
+    name: "{{ influxdb_release.binaries.core }}"
     state: reloaded
 
 ...

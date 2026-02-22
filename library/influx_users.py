@@ -4,8 +4,10 @@
 # (c) 2022, Bodo Schulz <bodo@boone-schulz.de>
 
 from __future__ import absolute_import, division, print_function
-from ansible.module_utils.basic import AnsibleModule
+
 import json
+
+from ansible.module_utils.basic import AnsibleModule
 
 # # influx user --help
 # NAME:
@@ -26,12 +28,11 @@ import json
 
 
 class InfluxUser(object):
-    """
-    """
+    """ """
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
 
@@ -47,42 +48,32 @@ class InfluxUser(object):
 
     def run(self):
         """
-          runner
+        runner
         """
         result_state = []
 
-        result = dict(
-            rc=0,
-            failed=False,
-            changed=False,
-            msg="Influxdb users ..."
-        )
+        result = dict(rc=0, failed=False, changed=False, msg="Influxdb users ...")
 
         rc, out, err = self.user_list()
 
         _out = json.loads(out)
 
-        users = list(
-            map(lambda d: d.get('name', 'default value'), _out)
-        )
+        users = list(map(lambda d: d.get("name", "default value"), _out))
         self.module.log(msg=f" - existion users: {', '.join(users)}")
 
         for username, v in self.users.items():
-            """
-            """
+            """ """
             _state = v.get("state", "create")
             # self.module.log(msg=f"   org: '{organization}'")
             # self.module.log(msg=f"     values: '{v}'")
 
             if _state == "create":
                 """
-                  create new user
+                create new user
                 """
                 if username in users:
                     res = {}
-                    res[username] = dict(
-                        state=f"user: '{username}' already created."
-                    )
+                    res[username] = dict(state=f"user: '{username}' already created.")
                     result_state.append(res)
                     continue
 
@@ -96,10 +87,7 @@ class InfluxUser(object):
                     result_state.append(res)
                 else:
                     res = {}
-                    res[username] = dict(
-                        state=err,
-                        failed=True
-                    )
+                    res[username] = dict(state=err, failed=True)
                     result_state.append(res)
 
         # define changed for the running tasks
@@ -107,21 +95,16 @@ class InfluxUser(object):
         combined_d = {key: value for d in result_state for key, value in d.items()}
 
         # find all changed and define our variable
-        changed = (len({k: v for k, v in combined_d.items() if v.get('changed')}) > 0)
+        changed = len({k: v for k, v in combined_d.items() if v.get("changed")}) > 0
         # find all failed and define our variable
-        failed = (len({k: v for k, v in combined_d.items() if v.get('failed')}) > 0)
+        failed = len({k: v for k, v in combined_d.items() if v.get("failed")}) > 0
 
-        result = dict(
-            changed=changed,
-            failed=failed,
-            state=result_state
-        )
+        result = dict(changed=changed, failed=failed, state=result_state)
 
         return result
 
     def user_list(self, user_name=None):
-        """
-        """
+        """ """
         args = []
         args.append(self._influx)
         args.append("user")
@@ -139,28 +122,28 @@ class InfluxUser(object):
 
     def user_create(self, user_name, values):
         """
-            # influx user create --help
-            NAME:
-               influx user create - Create user
+        # influx user create --help
+        NAME:
+           influx user create - Create user
 
-            USAGE:
-               influx user create [command options] [arguments...]
+        USAGE:
+           influx user create [command options] [arguments...]
 
-            COMMON OPTIONS:
-               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
-               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
-               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
-               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
-               --http-debug
-               --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
-               --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
-               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+        COMMON OPTIONS:
+           --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+           --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+           --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+           --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+           --http-debug
+           --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
+           --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
+           --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
 
-            OPTIONS:
-               --org-id value              The ID of the organization [$INFLUX_ORG_ID]
-               --org value, -o value       The name of the organization [$INFLUX_ORG]
-               --name value, -n value      The user name [$INFLUX_NAME]
-               --password value, -p value  The user password
+        OPTIONS:
+           --org-id value              The ID of the organization [$INFLUX_ORG_ID]
+           --org value, -o value       The name of the organization [$INFLUX_ORG]
+           --name value, -n value      The user name [$INFLUX_NAME]
+           --password value, -p value  The user password
         """
         organisation = values.get("organization", {}).get("name")
         password = values.get("password")
@@ -183,23 +166,19 @@ class InfluxUser(object):
         return rc, out, err
 
     def _user_delete(self):
-        """
-        """
+        """ """
         pass
 
     def _user_update(self):
-        """
-        """
+        """ """
         pass
 
     def _user_password(self):
-        """
-        """
+        """ """
         pass
 
     def _common_options(self):
-        """
-        """
+        """ """
         args = []
         args.append("--host")
         args.append(self.host)
@@ -229,7 +208,7 @@ class InfluxUser(object):
 
     def _exec(self, commands, check_rc=True):
         """
-          execute shell program
+        execute shell program
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
 
@@ -238,6 +217,7 @@ class InfluxUser(object):
         # self.module.log(msg=f"  err: '{err}'")
 
         return rc, out, err
+
 
 # ===========================================
 # Module execution.
@@ -248,35 +228,13 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            host=dict(
-                required=True,
-                type="str"
-            ),
-            skip_verify=dict(
-                required=False,
-                type="bool"
-            ),
-            http_debug=dict(
-                required=False,
-                type="bool"
-            ),
-            configs_path=dict(
-                required=False,
-                type="path"
-            ),
-            active_config=dict(
-                required=False,
-                type="list",
-                default=[]
-            ),
-            token=dict(
-                required=False,
-                type="str"
-            ),
-            users=dict(
-                required=True,
-                type="dict"
-            )
+            host=dict(required=True, type="str"),
+            skip_verify=dict(required=False, type="bool"),
+            http_debug=dict(required=False, type="bool"),
+            configs_path=dict(required=False, type="path"),
+            active_config=dict(required=False, type="list", default=[]),
+            token=dict(required=False, type="str"),
+            users=dict(required=True, type="dict"),
         ),
         supports_check_mode=False,
     )
@@ -290,5 +248,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

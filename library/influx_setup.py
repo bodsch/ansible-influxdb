@@ -4,10 +4,12 @@
 # (c) 2022, Bodo Schulz <bodo@boone-schulz.de>
 
 from __future__ import absolute_import, division, print_function
+
+from ansible.module_utils.basic import AnsibleModule
+
 # import os
 # import sys
 
-from ansible.module_utils.basic import AnsibleModule
 
 # # influx setup --help
 # NAME:
@@ -37,12 +39,11 @@ from ansible.module_utils.basic import AnsibleModule
 
 
 class InfluxSetup(object):
-    """
-    """
+    """ """
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
 
@@ -64,7 +65,7 @@ class InfluxSetup(object):
 
     def run(self):
         """
-          runner
+        runner
         """
         result = dict(
             rc=0,
@@ -118,7 +119,7 @@ class InfluxSetup(object):
                 rc=rc,
                 cmd=" ".join(args),
                 stdout=out,
-                stderr=err
+                stderr=err,
             )
         else:
             failed = True
@@ -133,14 +134,13 @@ class InfluxSetup(object):
                 rc=rc,
                 cmd=" ".join(args),
                 stdout=out,
-                stderr=err
+                stderr=err,
             )
 
         return result
 
     def _common_options(self):
-        """
-        """
+        """ """
         args = []
         args.append("--host")
         args.append(self.host)
@@ -170,7 +170,7 @@ class InfluxSetup(object):
 
     def _exec(self, commands, check_rc=True):
         """
-          execute shell program
+        execute shell program
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
 
@@ -180,72 +180,29 @@ class InfluxSetup(object):
 
         return rc, out, err
 
+
 # ===========================================
 # Module execution.
 #
 
 
 def main():
-    """
-    """
+    """ """
     module = AnsibleModule(
         argument_spec=dict(
-            host=dict(
-                required=True,
-                type="str"
-            ),
-            skip_verify=dict(
-                required=False,
-                type="bool"
-            ),
-            http_debug=dict(
-                required=False,
-                type="bool"
-            ),
-            configs_path=dict(
-                required=False,
-                type="path"
-            ),
-            active_config=dict(
-                required=False,
-                type="list",
-                default=[]
-            ),
-            name=dict(
-                required=False,
-                type="str"
-            ),
-            username=dict(
-                required=True,
-                type="str"
-            ),
-            password=dict(
-                required=True,
-                type="str",
-                no_log=True
-            ),
-            token=dict(
-                required=False,
-                type="str"
-            ),
-            org=dict(
-                required=True,
-                type="str"
-            ),
-            bucket=dict(
-                required=True,
-                type="str"
-            ),
-            retention=dict(
-                required=False,
-                type="int",
-                default=0
-            ),
-            force=dict(
-                required=False,
-                type="bool"
-            ),
-
+            host=dict(required=True, type="str"),
+            skip_verify=dict(required=False, type="bool"),
+            http_debug=dict(required=False, type="bool"),
+            configs_path=dict(required=False, type="path"),
+            active_config=dict(required=False, type="list", default=[]),
+            name=dict(required=False, type="str"),
+            username=dict(required=True, type="str"),
+            password=dict(required=True, type="str", no_log=True),
+            token=dict(required=False, type="str"),
+            org=dict(required=True, type="str"),
+            bucket=dict(required=True, type="str"),
+            retention=dict(required=False, type="int", default=0),
+            force=dict(required=False, type="bool"),
         ),
         supports_check_mode=False,
     )
@@ -259,5 +216,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

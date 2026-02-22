@@ -1,0 +1,77 @@
+---
+
+- name: detect extracted binary file for influxdb {{ influxdb_install_paths.core }}/influxd
+  ansible.builtin.stat:
+    path: "{{ influxdb_install_paths.core }}/influxd"
+  register: stat_influxd_file_binary
+
+- name: core
+  when:
+    - stat_influxd_file_binary.stat is defined
+    - not stat_influxd_file_binary.stat.exists | default('false')
+  block:
+    - name: propagate influxd archive
+      when:
+        - stat_influxd_file_binary.stat is defined
+        - not stat_influxd_file_binary.stat.exists | default('false')
+      ansible.builtin.copy:
+        src: "{{ influxdb_local_tmp_directory }}/{{ influxdb_download_artifact }}"
+        dest: "{{ influxdb_install_paths.core }}/"
+        remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
+
+    - name: extract influxdb version 2 archiv
+      when:
+        - stat_influxd_file_binary.stat is defined
+        - not stat_influxd_file_binary.stat.exists | default('false')
+      ansible.builtin.unarchive:
+        src: "{{ influxdb_install_paths.core }}/{{ influxdb_download_artifact }}"
+        dest: "{{ influxdb_install_paths.core }}/"
+        copy: false
+        extra_opts:
+          - --strip-components=1
+
+    - name: make sure influxd is executable
+      ansible.builtin.file:
+        path: "{{ influxdb_install_paths.core }}/{{ influxdb_release.binaries.core }}"
+        mode: "0755"
+        owner: "{{ influxdb_system_user }}"
+        group: "{{ influxdb_system_group }}"
+
+    - name: remove influxd archive
+      ansible.builtin.file:
+        path: "{{ influxdb_install_paths.core }}/{{ influxdb_download_artifact }}"
+        state: absent
+
+  rescue:
+    - name: delete install directory
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - influxdb_install_paths.core
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred during the installation of the binary.
+
+- name: detect activated influxdb
+  ansible.builtin.stat:
+    path: "/usr/bin/influxd"
+  register: stat_influxdb_activated
+
+- name: detect, if influx {{ influxdb_version }} activated
+  ansible.builtin.set_fact:
+    influxdb_must_activated: "{{ not stat_influxdb_activated.stat | bodsch.core.linked_version(install_path=influxdb_install_paths.core, version=influxdb_version) }}"
+
+- name: activate influx
+  when:
+    - stat_influxd_file_binary.stat is defined
+    - stat_influxd_file_binary.stat.exists | default(false)
+    - influxdb_must_activated
+  block:
+    - name: create link to influxd binary
+      ansible.builtin.file:
+        src: "{{ influxdb_install_paths.core }}/influxd"
+        dest: "/usr/bin/influxd"
+        state: link
+        force: true

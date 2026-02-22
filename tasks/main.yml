@@ -7,12 +7,12 @@
   ansible.builtin.include_tasks: download.yml
 
 - name: install
-  ansible.builtin.include_tasks: install.yml
+  ansible.builtin.include_tasks: install/main.yml
 
 - name: configure
   ansible.builtin.include_tasks: configure/main.yml
 
-# - name: service
-#   ansible.builtin.include_tasks: service.yml
+- name: service
+  ansible.builtin.include_tasks: service.yml
 
 ...

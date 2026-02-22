@@ -1,6 +1,6 @@
 ---
 
-- name: include OS specific configuration ({{ ansible_distribution }} ({{ ansible_os_family }}) {{ ansible_distribution_major_version }})
+- name: include OS specific configuration ({{ ansible_facts.distribution }} ({{ ansible_facts.os_family }}) {{ ansible_facts.distribution_major_version }})
   ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
     params:
@@ -8,41 +8,40 @@
         - "vars"
       files:
         # eg. debian-10 / ubuntu-20.04 / centos-8 / oraclelinux-8
-        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml"
+        - "{{ ansible_facts.distribution | lower }}-{{ ansible_facts.distribution_major_version }}.yml"
         # eg. archlinux-systemd / archlinux-openrc
-        - "{{ ansible_distribution | lower }}-{{ ansible_service_mgr | lower }}.yml"
+        - "{{ ansible_facts.distribution | lower }}-{{ ansible_facts.service_mgr | lower }}.yml"
         # eg. debian / ubuntu / centos / oraclelinux
-        - "{{ ansible_distribution | lower }}.yml"
+        - "{{ ansible_facts.distribution | lower }}.yml"
         # eg. redhat / debian / archlinux
-        - "{{ ansible_os_family | lower }}.yml"
+        - "{{ ansible_facts.os_family | lower }}.yml"
         # artixlinux
-        - "{{ ansible_os_family | lower | replace(' ', '') }}.yml"
+        - "{{ ansible_facts.os_family | lower | replace(' ', '') }}.yml"
         - default.yaml
       skip: true
 
-# - name: define influxdb release definition
-#   ansible.builtin.set_fact:
-#     influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) | influxdb_update_release(core_version=influxdb_version, client_version=influxdb_cli_version) }}"
+- name: detect ansible check_mode
+  bodsch.core.check_mode:
+  register: _check_mode
+
+- name: define running_in_check_mode
+  ansible.builtin.set_fact:
+    running_in_check_mode: '{{ _check_mode.check_mode }}'
 
 - name: install dependency
-  ansible.builtin.package:
-    name: "{{ influxdb_requirements }}"
-    state: present
   when:
-    - influxdb_requirements | default([]) | count > 0
-
-# - name: d
-#   debug:
-#     msg:
-#       - "{{ influxdb_version }}"
-#       - "{{ influxdb_main_version }}"
+    - not running_in_check_mode
+    - influxdb_dependencies | default([]) | count > 0
+  ansible.builtin.package:
+    name: "{{ influxdb_dependencies }}"
+    state: present
 
 - name: assert wrong influxdb version
   ansible.builtin.assert:
     that:
       - influxdb_main_version | int in [2, 3]
     msg:
-      - this role handle only influxdb2
+      - this role handle only influxdb version 2 or 3
       - for influxdb1 support, please use  mkayontour.ansible-influxdb
     quiet: true
   when:
@@ -53,3 +52,9 @@
     influxdb_service: "{{ influxdb_defaults_service | combine(influxdb_service, recursive=True) }}"
 
 ...
+
+# - name: d
+#   debug:
+#     msg:
+#       - "{{ influxdb_version }}"
+#       - "{{ influxdb_main_version }}"

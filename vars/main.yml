@@ -16,7 +16,7 @@ influxdb_local_tmp_directory: "{{
   lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
   default(lookup('env', 'HOME') ~ '/.cache/ansible/influxdb', true) }}/{{ influxdb_version }}"
 
-influxdb_requirements:
+influxdb_dependencies:
   - python3-requests
 
 influxdb_defaults_service:
@@ -31,7 +31,7 @@ influxdb_defaults_service:
     destination: "stdout"
 
   # add an instance id for replications to prevent collisions and allow querying by edge node
-  instance_id: "{{ ansible_hostname }}"
+  instance_id: "{{ ansible_facts.hostname }}"
 
   metrics:
     # v2 - Don't expose metrics over HTTP at /metrics
@@ -202,7 +202,7 @@ go_arch_map:
   x86_64: 'amd64'
   aarch64: 'arm64'
 
-system_architecture: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+system_architecture: "{{ go_arch_map[ansible_facts.architecture] | default(ansible_facts.architecture) }}"
 
 systemd_lib_directory: /lib/systemd/system
 

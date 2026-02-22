@@ -30,7 +30,7 @@ class FilterModule(object):
     def influxdb_release(self, data, influxdb_version, version=None):
         """
         """
-        # display.v(f"influxdb_release(self, {data}, {influxdb_version}, {version})")
+        display.v(f"bodsch.influxdb.influxdb_release(self, data: {data}, influxdb_version: {influxdb_version}, version: {version})")
         # influxdb_files = data.get("files", {})
         # display.v(f"  - {influxdb_files}")
         if version:
@@ -43,7 +43,7 @@ class FilterModule(object):
     def influxdb_fix_binary(self, data, influxdb_version, influxdb_type=""):
         """
         """
-        display.v(f"influxdb_fix_binary(self, {data}, {influxdb_version}, {influxdb_type})")
+        display.v(f"bodsch.influxdb.influxdb_fix_binary(self, data: {data}, influxdb_version: {influxdb_version}, influxdb_type: {influxdb_type})")
 
         result = []
 
@@ -83,7 +83,7 @@ class FilterModule(object):
     def influx_binaries(self, data):
         """
         """
-        display.v(f"influx_binaries(self, {data})")
+        display.v(f"bodsch.influxdb.influx_binaries(self, data: {data})")
 
         files_with_path = []
         files = []
@@ -102,7 +102,7 @@ class FilterModule(object):
     def influxdb_update_release(self, data, core_version, client_version):
         """
         """
-        display.v(f"influxdb_update_release(self, {data}, {core_version}, {client_version})")
+        display.v(f"bodsch.influxdb.influxdb_update_release(self, data: {data}, core_version: {core_version}, client_version: {client_version})")
 
         _main_version = core_version[0:1]
 
@@ -141,7 +141,7 @@ class FilterModule(object):
     def influxdb_bind(self, data, core_version):
         """
         """
-        display.v(f"influxdb_bind(self, {data}, {core_version})")
+        display.v(f"bodsch.influxdb.influxdb_bind(self, data: {data}, core_version: {core_version})")
 
         result = "http://"
 

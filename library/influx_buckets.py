@@ -4,8 +4,10 @@
 # (c) 2022, Bodo Schulz <bodo@boone-schulz.de>
 
 from __future__ import absolute_import, division, print_function
-from ansible.module_utils.basic import AnsibleModule
+
 import json
+
+from ansible.module_utils.basic import AnsibleModule
 
 # # influx bucket --help
 # NAME:
@@ -25,12 +27,11 @@ import json
 
 
 class InfluxBucket(object):
-    """
-    """
+    """ """
 
     def __init__(self, module):
         """
-          Initialize all needed Variables
+        Initialize all needed Variables
         """
         self.module = module
 
@@ -46,16 +47,11 @@ class InfluxBucket(object):
 
     def run(self):
         """
-          runner
+        runner
         """
         result_state = []
 
-        result = dict(
-            rc=0,
-            failed=False,
-            changed=False,
-            msg="Influxdb buckets ..."
-        )
+        result = dict(rc=0, failed=False, changed=False, msg="Influxdb buckets ...")
 
         # rc, out, err = self.bucket_list()
         #
@@ -67,8 +63,7 @@ class InfluxBucket(object):
         # self.module.log(msg=f" - existion global buckets: {', '.join(global_buckets)}")
 
         for bucketname, v in self.buckets.items():
-            """
-            """
+            """ """
             _state = v.get("state", "create")
             _organization = v.get("organization", {}).get("name", None)
             buckets = []
@@ -81,14 +76,14 @@ class InfluxBucket(object):
             if rc == 0:
                 _out = json.loads(out)
 
-                buckets = list(
-                    map(lambda d: d.get('name', 'default value'), _out)
+                buckets = list(map(lambda d: d.get("name", "default value"), _out))
+                self.module.log(
+                    msg=f" - existion buckets for org {_organization}: {', '.join(buckets)}"
                 )
-                self.module.log(msg=f" - existion buckets for org {_organization}: {', '.join(buckets)}")
 
             if _state == "create":
                 """
-                  create new bucket
+                create new bucket
                 """
                 if bucketname in buckets:
                     res = {}
@@ -108,10 +103,7 @@ class InfluxBucket(object):
                     result_state.append(res)
                 else:
                     res = {}
-                    res[bucketname] = dict(
-                        state=err,
-                        failed=True
-                    )
+                    res[bucketname] = dict(state=err, failed=True)
                     result_state.append(res)
 
         # define changed for the running tasks
@@ -119,45 +111,41 @@ class InfluxBucket(object):
         combined_d = {key: value for d in result_state for key, value in d.items()}
 
         # find all changed and define our variable
-        changed = (len({k: v for k, v in combined_d.items() if v.get('changed')}) > 0)
+        changed = len({k: v for k, v in combined_d.items() if v.get("changed")}) > 0
         # find all failed and define our variable
-        failed = (len({k: v for k, v in combined_d.items() if v.get('failed')}) > 0)
+        failed = len({k: v for k, v in combined_d.items() if v.get("failed")}) > 0
 
-        result = dict(
-            changed=changed,
-            failed=failed,
-            state=result_state
-        )
+        result = dict(changed=changed, failed=failed, state=result_state)
 
         return result
 
     def bucket_list(self, bucket_name=None, values={}):
         """
-            # influx bucket list --help
-            NAME:
-               influx bucket list - List buckets
+        # influx bucket list --help
+        NAME:
+           influx bucket list - List buckets
 
-            USAGE:
-               influx bucket list [command options] [arguments...]
+        USAGE:
+           influx bucket list [command options] [arguments...]
 
-            COMMON OPTIONS:
-               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
-               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
-               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
-               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
-               --http-debug
-               --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
-               --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
-               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+        COMMON OPTIONS:
+           --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+           --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+           --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+           --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+           --http-debug
+           --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
+           --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
+           --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
 
-            OPTIONS:
-               --org-id value          The ID of the organization [$INFLUX_ORG_ID]
-               --org value, -o value   The name of the organization [$INFLUX_ORG]
-               --id value, -i value    The bucket ID, required if name isn't provided
-               --name value, -n value  The bucket name, org or org-id will be required by choosing this
-               --limit value           Total number of buckets to fetch from the server, or 0 to return all buckets (default: 0)
-               --offset value          Number of buckets to skip over in the list (default: 0)
-               --page-size value       Number of buckets to fetch per request to the server (default: 20)
+        OPTIONS:
+           --org-id value          The ID of the organization [$INFLUX_ORG_ID]
+           --org value, -o value   The name of the organization [$INFLUX_ORG]
+           --id value, -i value    The bucket ID, required if name isn't provided
+           --name value, -n value  The bucket name, org or org-id will be required by choosing this
+           --limit value           Total number of buckets to fetch from the server, or 0 to return all buckets (default: 0)
+           --offset value          Number of buckets to skip over in the list (default: 0)
+           --page-size value       Number of buckets to fetch per request to the server (default: 20)
         """
         if values and len(values) > 0:
             organisation = values.get("organization", {}).get("name")
@@ -188,31 +176,31 @@ class InfluxBucket(object):
 
     def bucket_create(self, bucket_name, values):
         """
-            # influx bucket create --help
-            NAME:
-               influx bucket create - Create bucket
+        # influx bucket create --help
+        NAME:
+           influx bucket create - Create bucket
 
-            USAGE:
-               influx bucket create [command options] [arguments...]
+        USAGE:
+           influx bucket create [command options] [arguments...]
 
-            COMMON OPTIONS:
-               --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
-               --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
-               --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
-               --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
-               --http-debug
-               --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
-               --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
-               --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
+        COMMON OPTIONS:
+           --host value                     HTTP address of InfluxDB [$INFLUX_HOST]
+           --skip-verify                    Skip TLS certificate chain and host name verification [$INFLUX_SKIP_VERIFY]
+           --configs-path value             Path to the influx CLI configurations [$INFLUX_CONFIGS_PATH]
+           --active-config value, -c value  Config name to use for command [$INFLUX_ACTIVE_CONFIG]
+           --http-debug
+           --json                           Output data as JSON [$INFLUX_OUTPUT_JSON]
+           --hide-headers                   Hide the table headers in output data [$INFLUX_HIDE_HEADERS]
+           --token value, -t value          Token to authenticate request [$INFLUX_TOKEN]
 
-            OPTIONS:
-               --org-id value                 The ID of the organization [$INFLUX_ORG_ID]
-               --org value, -o value          The name of the organization [$INFLUX_ORG]
-               --name value, -n value         New bucket name [$INFLUX_BUCKET_NAME]
-               --description value, -d value  Description of the bucket that will be created
-               --retention value, -r value    Duration bucket will retain data, or 0 for infinite
-               --shard-group-duration value   Shard group duration used internally by the storage engine
-               --schema-type value            The schema type (implicit, explicit) (default: implicit)
+        OPTIONS:
+           --org-id value                 The ID of the organization [$INFLUX_ORG_ID]
+           --org value, -o value          The name of the organization [$INFLUX_ORG]
+           --name value, -n value         New bucket name [$INFLUX_BUCKET_NAME]
+           --description value, -d value  Description of the bucket that will be created
+           --retention value, -r value    Duration bucket will retain data, or 0 for infinite
+           --shard-group-duration value   Shard group duration used internally by the storage engine
+           --schema-type value            The schema type (implicit, explicit) (default: implicit)
         """
         organisation = values.get("organization", {}).get("name")
         description = values.get("description")
@@ -254,20 +242,16 @@ class InfluxBucket(object):
         return rc, out, err
 
     def _bucket_delete(self):
-        """
-        """
+        """ """
 
     def _bucket_update(self):
-        """
-        """
+        """ """
 
     def _bucket_password(self):
-        """
-        """
+        """ """
 
     def _common_options(self):
-        """
-        """
+        """ """
         args = []
         args.append("--host")
         args.append(self.host)
@@ -297,7 +281,7 @@ class InfluxBucket(object):
 
     def _exec(self, commands, check_rc=True):
         """
-          execute shell program
+        execute shell program
         """
         rc, out, err = self.module.run_command(commands, check_rc=check_rc)
 
@@ -306,6 +290,7 @@ class InfluxBucket(object):
         # self.module.log(msg=f"  err: '{err}'")
 
         return rc, out, err
+
 
 # ===========================================
 # Module execution.
@@ -316,35 +301,13 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            host=dict(
-                required=True,
-                type="str"
-            ),
-            skip_verify=dict(
-                required=False,
-                type="bool"
-            ),
-            http_debug=dict(
-                required=False,
-                type="bool"
-            ),
-            configs_path=dict(
-                required=False,
-                type="path"
-            ),
-            active_config=dict(
-                required=False,
-                type="list",
-                default=[]
-            ),
-            token=dict(
-                required=False,
-                type="str"
-            ),
-            buckets=dict(
-                required=True,
-                type="dict"
-            )
+            host=dict(required=True, type="str"),
+            skip_verify=dict(required=False, type="bool"),
+            http_debug=dict(required=False, type="bool"),
+            configs_path=dict(required=False, type="path"),
+            active_config=dict(required=False, type="list", default=[]),
+            token=dict(required=False, type="str"),
+            buckets=dict(required=True, type="dict"),
         ),
         supports_check_mode=False,
     )
@@ -358,5 +321,5 @@ def main():
 
 
 # import module snippets
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

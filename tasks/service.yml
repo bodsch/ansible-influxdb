@@ -1,12 +1,12 @@
 ---
 
-- name: restart influxdb if needed
+- name: restart {{ influxdb_release.binaries.core }} if needed
   ansible.builtin.meta: flush_handlers
 
-- name: ensure influxdb is enabled on boot
+- name: ensure {{ influxdb_release.binaries.core }} is enabled on boot
   become: true
   ansible.builtin.service:
-    name: influxdb
+    name: "{{ influxdb_release.binaries.core }}"
     enabled: true
     state: started
 
