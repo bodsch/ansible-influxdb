@@ -52,7 +52,11 @@ OPTIONS="
     --node-id {{ influxdb_service.instance_id }} \
     --object-store {{ influxdb_service.object_store | default('file') }} \
     --data-dir {{ influxdb_storage_dir }} \
+    {% if influxdb_service.auth.enabled is defined and
+          influxdb_service.auth.enabled | string | length > 0 and
+          not influxdb_service.auth.enabled %}
     --without-auth \
+    {% endif %}
     {% if influxdb_version is version_compare('3.1.0', '>=') %}
     --disable-authz health,ping,metrics \
     {% endif %}

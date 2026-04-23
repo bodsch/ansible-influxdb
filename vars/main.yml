@@ -33,6 +33,9 @@ influxdb_defaults_service:
   # add an instance id for replications to prevent collisions and allow querying by edge node
   instance_id: "{{ ansible_facts.hostname }}"
 
+  auth:
+    enabled: false
+
   metrics:
     # v2 - Don't expose metrics over HTTP at /metrics
     enabled: true

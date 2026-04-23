@@ -1,0 +1,45 @@
+---
+
+- name: set influxdb default user, organization, and bucket
+  when:
+    - not running_in_check_mode
+    - influxdb_main_version | int == 2
+  influxdb2_setup:
+    main_version: "{{ influxdb_main_version }}"
+    host: "{{ influxdb_http }}" # "http://127.0.0.1:8086"
+    org: "{{ influxdb_primary.organization }}"
+    bucket: "{{ influxdb_primary.bucket }}"
+    username: "{{ influxdb_primary.username }}"
+    password: "{{ influxdb_primary.password }}"
+    token: "{{ influxdb_primary.token }}"
+    force: true
+  register: _setup
+
+- name: ensure organizations exists
+  when:
+    - not running_in_check_mode
+    - influxdb_main_version | int == 2
+  influxdb2_organizations:
+    host: "{{ influxdb_http }}" # "http://127.0.0.1:8086"
+    organizations: "{{ influxdb_organizations }}"
+  register: _org
+
+- name: ensure users exist
+  when:
+    - not running_in_check_mode
+    - influxdb_main_version | int == 2
+  influxdb2_users:
+    host: "{{ influxdb_http }}" # "http://127.0.0.1:8086"
+    users: "{{ influxdb_users }}"
+  register: _users
+
+- name: ensure buckets exist
+  when:
+    - not running_in_check_mode
+    - influxdb_main_version | int == 2
+  influxdb2_buckets:
+    host: "{{ influxdb_http }}" # "http://127.0.0.1:8086"
+    buckets: "{{ influxdb_buckets }}"
+  register: _buckets
+
+...

@@ -46,41 +46,17 @@
   until: _ping.rc == 0
   changed_when: false
 
-- name: set influxdb default user, organization, and bucket
+- name: influxdb2
+  ansible.builtin.include_tasks: configure/influxdb2.yml
   when:
     - not running_in_check_mode
-  influx_setup:
-    host: "http://127.0.0.1:8086"
-    org: "{{ influxdb_primary.organization }}"
-    bucket: "{{ influxdb_primary.bucket }}"
-    username: "{{ influxdb_primary.username }}"
-    password: "{{ influxdb_primary.password }}"
-    token: "{{ influxdb_primary.token }}"
-    force: true
-  register: _setup
+    - influxdb_main_version | int == 2
 
-- name: ensure organizations exists
+- name: influxdb3
+  ansible.builtin.include_tasks: configure/influxdb3.yml
   when:
     - not running_in_check_mode
-  influx_organizations:
-    host: "http://127.0.0.1:8086"
-    organizations: "{{ influxdb_organizations }}"
-  register: _org
+    - influxdb_main_version | int == 3
 
-- name: ensure users exist
-  when:
-    - not running_in_check_mode
-  influx_users:
-    host: "http://127.0.0.1:8086"
-    users: "{{ influxdb_users }}"
-  register: _users
-
-- name: ensure buckets exist
-  when:
-    - not running_in_check_mode
-  influx_buckets:
-    host: "http://127.0.0.1:8086"
-    buckets: "{{ influxdb_buckets }}"
-  register: _buckets
 
 ...

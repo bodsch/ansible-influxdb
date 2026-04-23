@@ -1,0 +1,41 @@
+---
+# INFLUX 1
+- name: ensure, that influxdb are running
+  ansible.builtin.service:
+    name: influxdb
+    state: started
+
+- name: wait for started influxdb
+  ansible.builtin.wait_for:
+    host: "{{ influxdb_config_global['bind-address'].split(':')[0] }}"
+    port: "{{ influxdb_config_global['bind-address'].split(':')[1] }}"
+    delay: 5
+    sleep: 1
+    state: started
+
+- name: check if user exists
+  ansible.builtin.command: |
+    /usr/bin/influxd \
+      -execute 'SHOW USERS' \
+      -username '{{ influxdb_admin.username }}' \
+      -password '{{ influxdb_admin.password }}' \
+      -format csv
+  register: _influxdb_check_user
+  failed_when: false
+  changed_when: false
+
+# - name: d
+#   ansible.builtin.debug:
+#     msg: "{{ _influxdb_check_user }}"
+
+- name: create admin user
+  ansible.builtin.command: |
+    /usr/bin/influxd \
+      -execute "CREATE USER {{ influxdb_admin.username }} WITH PASSWORD '{{ influxdb_admin.password }}' WITH ALL PRIVILEGES"
+  register: influxd_create_user
+  changed_when: influxd_create_user.rc != 0
+  failed_when: influxd_create_user.rc != 0
+  when:
+    - '"create admin user first or disable authentication" in _influxdb_check_user.stdout'
+
+...

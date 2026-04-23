@@ -8,17 +8,17 @@
   when:
     - ansible_facts.service_mgr | lower == "systemd"
 
-- name: start service
+- name: start influxdb
   ansible.builtin.service:
     name: "{{ influxdb_release.binaries.core }}"
     state: started
 
-- name: restart service
+- name: restart influxdb
   ansible.builtin.service:
     name: "{{ influxdb_release.binaries.core }}"
     state: restarted
 
-- name: reload service
+- name: reload influxdb
   ansible.builtin.service:
     name: "{{ influxdb_release.binaries.core }}"
     state: reloaded

@@ -5,8 +5,9 @@
 
 from __future__ import absolute_import, division, print_function
 
+from typing import Any, Optional, Dict, Tuple
 from ansible.module_utils.basic import AnsibleModule
-
+from ansible.module_utils.urls import fetch_url, open_url
 # # influx ping --help
 # NAME:
 #     ping - Check the InfluxDB /health endpoint
@@ -59,8 +60,8 @@ class InfluxPing(object):
                 return dict(
                     failed=True,
                     rc=10,
-                    msg=f"influx-cli is not installed.",
-                    stderr=f"influx-cli is not installed.",
+                    msg="influx-cli is not installed.",
+                    stderr="influx-cli is not installed.",
                 )
 
             args = []
@@ -93,11 +94,24 @@ class InfluxPing(object):
         if int(self.main_version) == 3:
             """ """
             rc = 1
-            status_code, result, err = self._request(url=f"{self.host}/ping")
 
-            _version = result.get("version", None)
+            url = f"{self.host}/ping"
+            self.module.log(f"  - url: {url}")
+
+            response, info = self._fetch(url=url, method="GET")
+            self.module.log(f"  - result: {info}")
+
+            result_url = info.get("url", {})
+            status = info.get("status", None)
+
+            self.module.log(f"  - result_url: {result_url}")
+            self.module.log(f"  - status_code: {status}")
 
             if int(status_code) == 200:
+                self.module.log(
+                    msg=f" json    : {response.json()} / {type(response.json())}"
+                )
+
                 rc = 0
 
             return dict(
@@ -105,6 +119,60 @@ class InfluxPing(object):
                 changed=False,
                 rc=rc,
                 # stdout=result,
+            )
+
+            # # self.module.log(f"  - msg        : {msg}")
+            # except:
+            #     self.module.log("fail :(")
+            #     pass
+            #
+            # status_code, result, err = self._request(url=url)
+            #
+            # self.module.log(f"  - status_code: {status_code}")
+            # self.module.log(f"  - result     : {result}")
+            # self.module.log(f"  - err        : {err}")
+            #
+            # _version = result.get("version", None)
+            #
+            # self.module.log(f"  - version    : {_version}")
+            #
+            # if int(status_code) == 200:
+            #     rc = 0
+            #
+            # return dict(
+            #     failed=(rc == 1),
+            #     changed=False,
+            #     rc=rc,
+            #     # stdout=result,
+            # )
+
+    def _fetch(self, url: str, method: str, headers: Optional[Dict[str, str]] = None) -> Tuple[Any, Dict[str, Any]]:
+        """
+        Wrapper around fetch_url for compatibility across ansible-core versions.
+
+        Newer ansible-core versions accept validate_certs kwarg.
+        Older versions read validate_certs from module.params and do not accept the kwarg.
+        """
+        self.module.log(f"InfluxPing::_fetch(url: {url}, method: {method}, headers: {headers})")
+
+        hdrs = headers or {}
+        try:
+            return fetch_url(
+                self.module,
+                url,
+                method=method,
+                timeout=10,
+                headers=hdrs,
+                validate_certs=False,
+            )
+        except TypeError:
+            self.module.params.setdefault("validate_certs", False)
+            return fetch_url(
+                self.module,
+                url,
+                method=method,
+                timeout=10,
+                headers=hdrs,
             )
 
     def _request(self, url):

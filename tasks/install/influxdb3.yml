@@ -8,22 +8,22 @@
 - name: core
   when:
     - stat_influxdb_file_binary.stat is defined
-    - not stat_influxdb_binary.stat.exists | default('false')
+    - not stat_influxdb_file_binary.stat.exists | default('false') | bool
   block:
 
     - name: propagate influx core archive
-      when:
-        - stat_influxdb_file_binary.stat is defined
-        - not stat_influxdb_binary.stat.exists | default('false')
+      # when:
+      #   - stat_influxdb_file_binary.stat is defined
+      #   - not stat_influxdb_binary.stat.exists | default('false') | bool
       ansible.builtin.copy:
         src: "{{ influxdb_local_tmp_directory }}/{{ influxdb_download_artifact }}"
         dest: "{{ influxdb_install_paths.core }}/"
         remote_src: "{{ 'true' if influxdb_direct_download else 'false' }}"
 
     - name: extract influxdb archiv
-      when:
-        - stat_influxdb_file_binary.stat is defined
-        - not stat_influxdb_binary.stat.exists | default('false')
+      # when:
+      #   - stat_influxdb_file_binary.stat is defined
+      #   - not stat_influxdb_binary.stat.exists | default('false') | bool
       ansible.builtin.unarchive:
         src: "{{ influxdb_install_paths.core }}/{{ influxdb_release.files.core }}"
         dest: "{{ influxdb_install_paths.core }}/"
@@ -38,9 +38,9 @@
         path: "{{ influxdb_install_paths.core }}/{{ influxdb_download_artifact }}"
         state: absent
 
-- name: detect activated influxdb
+- name: detect activated influxdb3
   ansible.builtin.stat:
-    path: "/usr/bin/influxdb"
+    path: "/usr/bin/influxdb3"
   register: stat_influxdb_activated
 
 - name: detect, if influx {{ influxdb_version }} activated
@@ -50,12 +50,14 @@
 - name: activate influx
   when:
     - stat_influxdb_file_binary.stat is defined
-    - stat_influxdb_file_binary.stat.exists | default(false)
-    - influxdb_must_activated
+    - stat_influxdb_file_binary.stat.exists | default('false') | bool
+    - influxdb_must_activated | bool
   block:
-    - name: create link to influxd binary
+    - name: create link to influxdb3 binary
       ansible.builtin.file:
-        src: "{{ influxdb_install_paths.core }}/influxd"
-        dest: "/usr/bin/influxd"
+        src: "{{ influxdb_install_paths.core }}/influxdb3"
+        dest: "/usr/bin/influxdb3"
         state: link
         force: true
+      notify:
+        - restart influxdb

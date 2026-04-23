@@ -38,7 +38,7 @@ from ansible.module_utils.basic import AnsibleModule
 #    --name value, -n value       Name to set on CLI config generated for the InfluxDB instance, required if other configs exist
 
 
-class InfluxSetup(object):
+class InfluxDb2Setup(object):
     """ """
 
     def __init__(self, module):
@@ -73,6 +73,13 @@ class InfluxSetup(object):
             changed=False,
             ansible_module_results="none",
         )
+
+        if int(self.main_version) == 2:
+            """ """
+            return self.influxdb2Setup()
+
+
+    def influxdb2Setup(self):
 
         args = []
         args.append(self._influx)
@@ -207,7 +214,7 @@ def main():
         supports_check_mode=False,
     )
 
-    o = InfluxSetup(module)
+    o = InfluxDb2Setup(module)
     result = o.run()
 
     module.log(msg=f"= result: {result}")

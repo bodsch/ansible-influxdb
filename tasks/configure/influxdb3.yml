@@ -1,0 +1,19 @@
+---
+
+- name: create operator token
+  when:
+    - not running_in_check_mode
+  influxdb3_token:
+    version: "{{ influxdb_version }}"
+    host: "{{ influxdb_http }}"
+    auth_enabled: "{{ influxdb_service.auth.enabled | default('false') | bool }}"
+  register: _operator
+
+- name: create operator token
+  when:
+    - not running_in_check_mode
+  influxdb3_token:
+    version: "{{ influxdb_version }}"
+    host: "{{ influxdb_http }}"
+    auth_enabled: "{{ influxdb_service.auth.enabled | default('false') | bool }}"
+  register: _operator

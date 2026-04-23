@@ -1,25 +1,40 @@
 ---
 
-- name: user and group handling
-  when:
-    - not running_in_check_mode
-    - influxdb_system_user != "root"
-  block:
-    - name: create influxdb group
-      ansible.builtin.group:
-        name: "{{ influxdb_system_group }}"
-        state: present
-        system: true
+- name: find account defaults
+  bodsch.core.account_defaults:
+    default_user: "{{ influxdb_system_user }}"
+    group: "{{ influxdb_system_group | default(influxdb_system_user) }}"
+  register: _default_user
 
-    - name: create influxdb user
-      ansible.builtin.user:
-        name: "{{ influxdb_system_user }}"
-        groups: "{{ influxdb_system_group }}"
-        append: true
-        shell: /usr/sbin/nologin
-        system: true
-        createhome: false
-        home: "{{ influxdb_storage_dir }}"
+# - name: d
+#   debug:
+#     msg: "{{ _default_user }}"
+
+- name: define influxdb user and group
+  ansible.builtin.set_fact:
+    influxdb_system_user: "{{ _default_user.user }}"
+    influxdb_system_group: "{{ _default_user.group }}"
+
+# - name: user and group handling
+#   when:
+#     - not running_in_check_mode
+#     - influxdb_system_user != "root"
+#   block:
+#     - name: create influxdb group
+#       ansible.builtin.group:
+#         name: "{{ influxdb_system_group }}"
+#         state: present
+#         system: true
+#
+#     - name: create influxdb user
+#       ansible.builtin.user:
+#         name: "{{ influxdb_system_user }}"
+#         groups: "{{ influxdb_system_group }}"
+#         append: true
+#         shell: /usr/sbin/nologin
+#         system: true
+#         createhome: false
+#         home: "{{ influxdb_storage_dir }}"
 
 - name: create install directory
   when:
@@ -37,7 +52,6 @@
 - name: merge influxdb configuration between defaults and custom
   ansible.builtin.set_fact:
     influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) | influxdb_update_release(core_version=influxdb_version, client_version=influxdb_cli_version) }}"
-
 
 - name: influxdb2
   ansible.builtin.include_tasks: install/influxdb2.yml
@@ -57,7 +71,6 @@
   when:
     - not running_in_check_mode
     - influxdb_main_version | int == 3
-
 
 - name: create influxdb data directory
   ansible.builtin.file:
@@ -87,7 +100,7 @@
         mode: "0640"
       notify:
         # - validate config
-        - restart service
+        - restart influxdb
 
     - name: create systemd service unit
       ansible.builtin.template:
@@ -98,7 +111,7 @@
         mode: "0644"
       notify:
         - systemd daemon reload
-        - restart service
+        - restart influxdb
 
 - name: openrc
   when:
