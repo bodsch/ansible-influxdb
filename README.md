@@ -3,6 +3,12 @@
 
 Ansible role to install and configure [influxdb2](https://github.com/influxdata/influxdb).
 
+---
+
+> I have moved this role to a [collection](https://github.com/bodsch/ansible-collection-influx), and will therefore no longer be handling any issues or merge requests here.  
+
+---
+
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-influxdb/main.yml?branch=main)][ci]
 [![GitHub issues](https://img.shields.io/github/issues/bodsch/ansible-influxdb)][issues]
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/bodsch/ansible-influxdb)][releases]
